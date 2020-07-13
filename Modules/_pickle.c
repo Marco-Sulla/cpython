@@ -109,7 +109,8 @@ enum opcode {
     /* Protocol 5 */
     BYTEARRAY8       = '\x96',
     NEXT_BUFFER      = '\x97',
-    READONLY_BUFFER  = '\x98'
+    READONLY_BUFFER  = '\x98',
+    FROZENDICT       = '\x99'
 };
 
 enum {
@@ -233,7 +234,7 @@ _Pickle_InitState(PickleState *st)
     st->dispatch_table = PyObject_GetAttrString(copyreg, "dispatch_table");
     if (!st->dispatch_table)
         goto error;
-    if (!PyDict_CheckExact(st->dispatch_table)) {
+    if (!PyAnyDict_CheckExact(st->dispatch_table)) {
         PyErr_Format(PyExc_RuntimeError,
                      "copyreg.dispatch_table should be a dict, not %.200s",
                      Py_TYPE(st->dispatch_table)->tp_name);
@@ -243,7 +244,7 @@ _Pickle_InitState(PickleState *st)
         PyObject_GetAttrString(copyreg, "_extension_registry");
     if (!st->extension_registry)
         goto error;
-    if (!PyDict_CheckExact(st->extension_registry)) {
+    if (!PyAnyDict_CheckExact(st->extension_registry)) {
         PyErr_Format(PyExc_RuntimeError,
                      "copyreg._extension_registry should be a dict, "
                      "not %.200s", Py_TYPE(st->extension_registry)->tp_name);
@@ -253,7 +254,7 @@ _Pickle_InitState(PickleState *st)
         PyObject_GetAttrString(copyreg, "_inverted_registry");
     if (!st->inverted_registry)
         goto error;
-    if (!PyDict_CheckExact(st->inverted_registry)) {
+    if (!PyAnyDict_CheckExact(st->inverted_registry)) {
         PyErr_Format(PyExc_RuntimeError,
                      "copyreg._inverted_registry should be a dict, "
                      "not %.200s", Py_TYPE(st->inverted_registry)->tp_name);
@@ -262,7 +263,7 @@ _Pickle_InitState(PickleState *st)
     st->extension_cache = PyObject_GetAttrString(copyreg, "_extension_cache");
     if (!st->extension_cache)
         goto error;
-    if (!PyDict_CheckExact(st->extension_cache)) {
+    if (!PyAnyDict_CheckExact(st->extension_cache)) {
         PyErr_Format(PyExc_RuntimeError,
                      "copyreg._extension_cache should be a dict, "
                      "not %.200s", Py_TYPE(st->extension_cache)->tp_name);
@@ -278,7 +279,7 @@ _Pickle_InitState(PickleState *st)
         PyObject_GetAttrString(compat_pickle, "NAME_MAPPING");
     if (!st->name_mapping_2to3)
         goto error;
-    if (!PyDict_CheckExact(st->name_mapping_2to3)) {
+    if (!PyAnyDict_CheckExact(st->name_mapping_2to3)) {
         PyErr_Format(PyExc_RuntimeError,
                      "_compat_pickle.NAME_MAPPING should be a dict, not %.200s",
                      Py_TYPE(st->name_mapping_2to3)->tp_name);
@@ -288,7 +289,7 @@ _Pickle_InitState(PickleState *st)
         PyObject_GetAttrString(compat_pickle, "IMPORT_MAPPING");
     if (!st->import_mapping_2to3)
         goto error;
-    if (!PyDict_CheckExact(st->import_mapping_2to3)) {
+    if (!PyAnyDict_CheckExact(st->import_mapping_2to3)) {
         PyErr_Format(PyExc_RuntimeError,
                      "_compat_pickle.IMPORT_MAPPING should be a dict, "
                      "not %.200s", Py_TYPE(st->import_mapping_2to3)->tp_name);
@@ -299,7 +300,7 @@ _Pickle_InitState(PickleState *st)
         PyObject_GetAttrString(compat_pickle, "REVERSE_NAME_MAPPING");
     if (!st->name_mapping_3to2)
         goto error;
-    if (!PyDict_CheckExact(st->name_mapping_3to2)) {
+    if (!PyAnyDict_CheckExact(st->name_mapping_3to2)) {
         PyErr_Format(PyExc_RuntimeError,
                      "_compat_pickle.REVERSE_NAME_MAPPING should be a dict, "
                      "not %.200s", Py_TYPE(st->name_mapping_3to2)->tp_name);
@@ -309,7 +310,7 @@ _Pickle_InitState(PickleState *st)
         PyObject_GetAttrString(compat_pickle, "REVERSE_IMPORT_MAPPING");
     if (!st->import_mapping_3to2)
         goto error;
-    if (!PyDict_CheckExact(st->import_mapping_3to2)) {
+    if (!PyAnyDict_CheckExact(st->import_mapping_3to2)) {
         PyErr_Format(PyExc_RuntimeError,
                      "_compat_pickle.REVERSE_IMPORT_MAPPING should be a dict, "
                      "not %.200s", Py_TYPE(st->import_mapping_3to2)->tp_name);
@@ -595,6 +596,41 @@ Pdata_poplist(Pdata *self, Py_ssize_t start)
         return NULL;
     for (i = start, j = 0; j < len; i++, j++)
         PyList_SET_ITEM(list, j, self->data[i]);
+
+    Py_SIZE(self) = start;
+    return list;
+}
+
+static PyObject *
+Pdata_poplist2(Pdata *self, Py_ssize_t start)
+{
+    PyObject *list;
+    PyObject *subtuple;
+    Py_ssize_t len, i, j;
+
+    if (start < self->fence) {
+        Pdata_stack_underflow(self);
+        return NULL;
+    }
+    
+    len = (Py_SIZE(self) - start) >> 1;
+    list = PyList_New(len);
+    
+    if (list == NULL) {
+        return NULL;
+    }
+    
+    for (i = start, j = 0; j < len; i+=2, j++) {
+        subtuple = PyTuple_New(2);
+        
+        if (subtuple == NULL) {
+            return NULL;
+        }
+        
+        PyTuple_SET_ITEM(subtuple, 0, self->data[i]);
+        PyTuple_SET_ITEM(subtuple, 1, self->data[i+1]);
+        PyList_SET_ITEM(list, j, subtuple);
+    }
 
     Py_SIZE(self) = start;
     return list;
@@ -1900,7 +1936,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
     }
-    if (PyDict_CheckExact(modules)) {
+    if (PyAnyDict_CheckExact(modules)) {
         i = 0;
         while (PyDict_Next(modules, &i, &module_name, &module)) {
             if (_checkmodule(module_name, module, global, dotted_path) == 0) {
@@ -3334,6 +3370,64 @@ save_dict(PicklerObject *self, PyObject *obj)
 }
 
 static int
+save_frozendict(PicklerObject *self, PyObject *obj)
+{
+    const char mark_op = MARK;
+    const char frozendict_op = FROZENDICT;
+
+    if (self->fast && !fast_save_enter(self, obj))
+        return -1;
+
+    if (self->proto < 4) {
+        PyObject *items;
+        PyObject *reduce_value;
+        int status;
+        
+        items = PyDict_Items(obj);
+        if (items == NULL) {
+            return -1;
+        }
+        reduce_value = Py_BuildValue("(O(O))", (PyObject*)&PyFrozenDict_Type,
+                                     items);
+        Py_DECREF(items);
+        if (reduce_value == NULL) {
+            return -1;
+        }
+        /* save_reduce() will memoize the object automatically. */
+        status = save_reduce(self, reduce_value, obj);
+        Py_DECREF(reduce_value);
+        return status;
+    }
+
+    if (_Pickler_Write(self, &mark_op, 1) < 0)
+        return -1;
+    
+    PyObject* key = NULL;
+    PyObject* value = NULL;
+    Py_ssize_t ppos = 0;
+    int res = 0;
+    
+    while (PyDict_Next(obj, &ppos, &key, &value)) {
+        res = save(self, key, 0);
+        
+        if (res >= 0) {
+            res = save(self, value, 0);
+        }
+        
+        if (res < 0) {
+            return -1;
+        }
+    }
+    
+    if (_Pickler_Write(self, &frozendict_op, 1) < 0)
+        return -1;
+    if (memo_put(self, obj) < 0)
+        return -1;
+
+    return 0;
+}
+
+static int
 save_set(PicklerObject *self, PyObject *obj)
 {
     PyObject *item;
@@ -4289,6 +4383,10 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
 
     if (type == &PyDict_Type) {
         status = save_dict(self, obj);
+        goto done;
+    }
+    else if (type == &PyFrozenDict_Type) {
+        status = save_frozendict(self, obj);
         goto done;
     }
     else if (type == &PySet_Type) {
@@ -5736,6 +5834,29 @@ load_dict(UnpicklerObject *self)
 }
 
 static int
+load_frozendict(UnpicklerObject *self)
+{
+    PyObject *items;
+    PyObject *frozendict;
+    Py_ssize_t i;
+
+    if ((i = marker(self)) < 0)
+        return -1;
+    
+    items = Pdata_poplist2(self->stack, i);
+    if (items == NULL)
+        return -1;
+
+    frozendict = PyFrozenDict_New(items, NULL);
+    Py_DECREF(items);
+    if (frozendict == NULL)
+        return -1;
+
+    PDATA_PUSH(self->stack, frozendict, -1);
+    return 0;
+}
+
+static int
 load_frozenset(UnpicklerObject *self)
 {
     PyObject *items;
@@ -6886,6 +7007,7 @@ load(UnpicklerObject *self)
         OP(LIST, load_list)
         OP(EMPTY_DICT, load_empty_dict)
         OP(DICT, load_dict)
+        OP(FROZENDICT, load_frozendict)
         OP(EMPTY_SET, load_empty_set)
         OP(ADDITEMS, load_additems)
         OP(FROZENSET, load_frozenset)

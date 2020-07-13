@@ -270,7 +270,7 @@ PyType_Modified(PyTypeObject *type)
 
     raw = type->tp_subclasses;
     if (raw != NULL) {
-        assert(PyDict_CheckExact(raw));
+        assert(PyAnyDict_CheckExact(raw));
         i = 0;
         while (PyDict_Next(raw, &i, NULL, &ref)) {
             assert(PyWeakref_CheckRef(ref));
@@ -3408,7 +3408,7 @@ type___subclasses___impl(PyTypeObject *self)
     raw = self->tp_subclasses;
     if (raw == NULL)
         return list;
-    assert(PyDict_CheckExact(raw));
+    assert(PyAnyDict_CheckExact(raw));
     i = 0;
     while (PyDict_Next(raw, &i, NULL, &ref)) {
         assert(PyWeakref_CheckRef(ref));
@@ -4211,7 +4211,7 @@ _PyObject_GetState(PyObject *obj, int required)
 
         if (required && obj->ob_type->tp_itemsize) {
             PyErr_Format(PyExc_TypeError,
-                         "cannot pickle '%.200s' object",
+                         "cannot pickle '%.200s' object: expected fixed-length instance (tp_itemsize != 0)",
                          Py_TYPE(obj)->tp_name);
             return NULL;
         }
@@ -4252,7 +4252,7 @@ _PyObject_GetState(PyObject *obj, int required)
                 Py_DECREF(slotnames);
                 Py_DECREF(state);
                 PyErr_Format(PyExc_TypeError,
-                             "cannot pickle '%.200s' object",
+                             "cannot pickle '%.200s' object: basic size greater than expected",
                              Py_TYPE(obj)->tp_name);
                 return NULL;
             }
@@ -4489,7 +4489,7 @@ reduce_newobj(PyObject *obj)
 
     if (Py_TYPE(obj)->tp_new == NULL) {
         PyErr_Format(PyExc_TypeError,
-                     "cannot pickle '%.200s' object",
+                     "cannot pickle '%.200s' object: object has no '__new__'",
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
@@ -4558,7 +4558,7 @@ reduce_newobj(PyObject *obj)
     }
 
     state = _PyObject_GetState(obj,
-                !hasargs && !PyList_Check(obj) && !PyDict_Check(obj));
+                !hasargs && !PyList_Check(obj) && !PyAnyDict_Check(obj));
     if (state == NULL) {
         Py_DECREF(newobj);
         Py_DECREF(newargs);
@@ -5504,7 +5504,7 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
         if (dict == NULL)
             return -1;
     }
-    assert(PyDict_CheckExact(dict));
+    assert(PyAnyDict_CheckExact(dict));
     key = PyLong_FromVoidPtr((void *) type);
     if (key == NULL)
         return -1;
@@ -5544,7 +5544,7 @@ remove_subclass(PyTypeObject *base, PyTypeObject *type)
     if (dict == NULL) {
         return;
     }
-    assert(PyDict_CheckExact(dict));
+    assert(PyAnyDict_CheckExact(dict));
     key = PyLong_FromVoidPtr((void *) type);
     if (key == NULL || PyDict_DelItem(dict, key)) {
         /* This can happen if the type initialization errored out before
@@ -7587,7 +7587,7 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *name,
     subclasses = type->tp_subclasses;
     if (subclasses == NULL)
         return 0;
-    assert(PyDict_CheckExact(subclasses));
+    assert(PyAnyDict_CheckExact(subclasses));
     i = 0;
     while (PyDict_Next(subclasses, &i, NULL, &ref)) {
         assert(PyWeakref_CheckRef(ref));

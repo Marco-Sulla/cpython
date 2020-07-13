@@ -2253,7 +2253,7 @@ main_loop:
             _Py_IDENTIFIER(__build_class__);
 
             PyObject *bc;
-            if (PyDict_CheckExact(f->f_builtins)) {
+            if (PyAnyDict_CheckExact(f->f_builtins)) {
                 bc = _PyDict_GetItemIdWithError(f->f_builtins, &PyId___build_class__);
                 if (bc == NULL) {
                     if (!_PyErr_Occurred(tstate)) {
@@ -2291,7 +2291,7 @@ main_loop:
                 Py_DECREF(v);
                 goto error;
             }
-            if (PyDict_CheckExact(ns))
+            if (PyAnyDict_CheckExact(ns))
                 err = PyDict_SetItem(ns, name, v);
             else
                 err = PyObject_SetItem(ns, name, v);
@@ -2425,7 +2425,7 @@ main_loop:
                               "no locals when loading %R", name);
                 goto error;
             }
-            if (PyDict_CheckExact(locals)) {
+            if (PyAnyDict_CheckExact(locals)) {
                 v = PyDict_GetItemWithError(locals, name);
                 if (v != NULL) {
                     Py_INCREF(v);
@@ -2451,7 +2451,7 @@ main_loop:
                     goto error;
                 }
                 else {
-                    if (PyDict_CheckExact(f->f_builtins)) {
+                    if (PyAnyDict_CheckExact(f->f_builtins)) {
                         v = PyDict_GetItemWithError(f->f_builtins, name);
                         if (v == NULL) {
                             if (!_PyErr_Occurred(tstate)) {
@@ -2483,8 +2483,8 @@ main_loop:
         case TARGET(LOAD_GLOBAL): {
             PyObject *name;
             PyObject *v;
-            if (PyDict_CheckExact(f->f_globals)
-                && PyDict_CheckExact(f->f_builtins))
+            if (PyAnyDict_CheckExact(f->f_globals)
+                && PyAnyDict_CheckExact(f->f_builtins))
             {
                 OPCACHE_CHECK();
                 if (co_opcache != NULL && co_opcache->optimized > 0) {
@@ -2607,7 +2607,7 @@ main_loop:
             idx = oparg - PyTuple_GET_SIZE(co->co_cellvars);
             assert(idx >= 0 && idx < PyTuple_GET_SIZE(co->co_freevars));
             name = PyTuple_GET_ITEM(co->co_freevars, idx);
-            if (PyDict_CheckExact(locals)) {
+            if (PyAnyDict_CheckExact(locals)) {
                 value = PyDict_GetItemWithError(locals, name);
                 if (value != NULL) {
                     Py_INCREF(value);
@@ -2818,7 +2818,7 @@ main_loop:
                 goto error;
             }
             /* check if __annotations__ in locals()... */
-            if (PyDict_CheckExact(f->f_locals)) {
+            if (PyAnyDict_CheckExact(f->f_locals)) {
                 ann_dict = _PyDict_GetItemIdWithError(f->f_locals,
                                              &PyId___annotations__);
                 if (ann_dict == NULL) {
@@ -2954,7 +2954,7 @@ main_loop:
             int err;
             STACK_SHRINK(2);
             map = PEEK(oparg);                      /* dict */
-            assert(PyDict_CheckExact(map));
+            assert(PyAnyDict_CheckExact(map));
             err = PyDict_SetItem(map, key, value);  /* map[key] = value */
             Py_DECREF(value);
             Py_DECREF(key);
@@ -3527,7 +3527,7 @@ main_loop:
             PyObject *func, *callargs, *kwargs = NULL, *result;
             if (oparg & 0x01) {
                 kwargs = POP();
-                if (!PyDict_CheckExact(kwargs)) {
+                if (!PyAnyDict_CheckExact(kwargs)) {
                     PyObject *d = PyDict_New();
                     if (d == NULL)
                         goto error;
@@ -3540,7 +3540,7 @@ main_loop:
                     Py_DECREF(kwargs);
                     kwargs = d;
                 }
-                assert(PyDict_CheckExact(kwargs));
+                assert(PyAnyDict_CheckExact(kwargs));
             }
             callargs = POP();
             func = TOP();
@@ -3585,11 +3585,11 @@ main_loop:
                 func ->func_closure = POP();
             }
             if (oparg & 0x04) {
-                assert(PyDict_CheckExact(TOP()));
+                assert(PyAnyDict_CheckExact(TOP()));
                 func->func_annotations = POP();
             }
             if (oparg & 0x02) {
-                assert(PyDict_CheckExact(TOP()));
+                assert(PyAnyDict_CheckExact(TOP()));
                 func->func_kwdefaults = POP();
             }
             if (oparg & 0x01) {
@@ -5334,7 +5334,7 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
         value = PyObject_GetAttr(v, name);
         if (value == NULL)
             err = -1;
-        else if (PyDict_CheckExact(locals))
+        else if (PyAnyDict_CheckExact(locals))
             err = PyDict_SetItem(locals, name, value);
         else
             err = PyObject_SetItem(locals, name, value);
@@ -5495,7 +5495,7 @@ unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
             PyObject *names = f->f_code->co_names;
             PyObject *name = GETITEM(names, oparg);
             PyObject *locals = f->f_locals;
-            if (locals && PyDict_CheckExact(locals)) {
+            if (locals && PyAnyDict_CheckExact(locals)) {
                 PyObject *w = PyDict_GetItemWithError(locals, name);
                 if ((w == v && PyDict_DelItem(locals, name) != 0) ||
                     (w == NULL && _PyErr_Occurred(tstate)))

@@ -190,7 +190,7 @@ the concrete API.
 Here are some ways to address this challenge:
 
 1. Change the relevant usage of the concrete API in CPython and add
-   PyDict_CheckExact() calls to each of the concrete API functions.
+   PyAnyDict_CheckExact() calls to each of the concrete API functions.
 2. Adjust the relevant concrete API functions to explicitly accommodate
    OrderedDict.
 3. As with #1, add the checks, but improve the abstract API with smart fast
@@ -211,7 +211,7 @@ For reference, here is a breakdown of some of the dict concrete API:
 concrete API               uses          abstract API
 ========================== ============= =======================
 PyDict_Check                             PyMapping_Check
-(PyDict_CheckExact)                      -
+(PyAnyDict_CheckExact)                   -
 (PyDict_New)                             -
 (PyDictProxy_New)                        -
 PyDict_Clear                             -
@@ -2212,7 +2212,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
         PyObject *other = PyTuple_GET_ITEM(args, 0);  /* borrowed reference */
         assert(other != NULL);
         Py_INCREF(other);
-        if (PyDict_CheckExact(other)) {
+        if (PyAnyDict_CheckExact(other)) {
             PyObject *items = PyDict_Items(other);
             Py_DECREF(other);
             if (items == NULL)

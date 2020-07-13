@@ -381,7 +381,7 @@ partial_setstate(partialobject *pto, PyObject *state)
 
     if (kw == Py_None)
         kw = PyDict_New();
-    else if(!PyDict_CheckExact(kw))
+    else if(!PyAnyDict_CheckExact(kw))
         kw = PyDict_Copy(kw);
     else
         Py_INCREF(kw);

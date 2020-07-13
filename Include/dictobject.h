@@ -13,12 +13,29 @@ extern "C" {
 */
 
 PyAPI_DATA(PyTypeObject) PyDict_Type;
+PyAPI_DATA(PyTypeObject) PyFrozenDict_Type;
 
 #define PyDict_Check(op) \
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_DICT_SUBCLASS)
+#define PyFrozenDict_Check(op) \
+                 PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_DICT_SUBCLASS)
 #define PyDict_CheckExact(op) (Py_TYPE(op) == &PyDict_Type)
+#define PyFrozenDict_CheckExact(op) (Py_TYPE(op) == &PyFrozenDict_Type)
+
+#define PyAnyDict_Check(ob) \
+    ( \
+        Py_TYPE(ob) == &PyDict_Type || Py_TYPE(ob) == &PyFrozenDict_Type || \
+        PyType_IsSubtype(Py_TYPE(ob), &PyDict_Type) || \
+        PyType_IsSubtype(Py_TYPE(ob), &PyFrozenDict_Type) \
+    )
+
+#define PyAnyDict_CheckExact(op) ( \
+    (Py_TYPE(op) == &PyDict_Type) || \
+    (Py_TYPE(op) == &PyFrozenDict_Type) \
+)
 
 PyAPI_FUNC(PyObject *) PyDict_New(void);
+PyAPI_FUNC(PyObject *) PyFrozenDict_New(PyObject* arg, PyObject* kwds);
 PyAPI_FUNC(PyObject *) PyDict_GetItem(PyObject *mp, PyObject *key);
 PyAPI_FUNC(PyObject *) PyDict_GetItemWithError(PyObject *mp, PyObject *key);
 PyAPI_FUNC(int) PyDict_SetItem(PyObject *mp, PyObject *key, PyObject *item);

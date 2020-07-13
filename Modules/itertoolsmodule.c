@@ -4417,7 +4417,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *fillvalue = Py_None;
     Py_ssize_t tuplesize;
 
-    if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
+    if (kwds != NULL && PyAnyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
         fillvalue = NULL;
         if (PyDict_GET_SIZE(kwds) == 1) {
             fillvalue = _PyDict_GetItemIdWithError(kwds, &PyId_fillvalue);

@@ -483,7 +483,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             w_object(PyList_GET_ITEM(v, i), p);
         }
     }
-    else if (PyDict_CheckExact(v)) {
+    else if (PyAnyDict_CheckExact(v)) {
         Py_ssize_t pos;
         PyObject *key, *value;
         W_TYPE(TYPE_DICT, p);

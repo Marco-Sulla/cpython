@@ -602,7 +602,7 @@ untrack_dicts(PyGC_Head *head)
     while (gc != head) {
         PyObject *op = FROM_GC(gc);
         next = GC_NEXT(gc);
-        if (PyDict_CheckExact(op)) {
+        if (PyAnyDict_CheckExact(op)) {
             _PyDict_MaybeUntrack(op);
         }
         gc = next;

@@ -800,6 +800,12 @@ frozenset_hash(PyObject *self)
     return hash;
 }
 
+Py_hash_t PyFrozenSet_Hash(PyObject* self) {
+    return frozenset_hash(self);
+}
+
+
+
 /***** Set iterator type ***********************************************/
 
 typedef struct {
@@ -958,7 +964,7 @@ set_update_internal(PySetObject *so, PyObject *other)
     if (PyAnySet_Check(other))
         return set_merge(so, other);
 
-    if (PyDict_CheckExact(other)) {
+    if (PyAnyDict_CheckExact(other)) {
         PyObject *value;
         Py_ssize_t pos = 0;
         Py_hash_t hash;
@@ -1549,7 +1555,7 @@ set_difference(PySetObject *so, PyObject *other)
     if (PyAnySet_Check(other)) {
         other_size = PySet_GET_SIZE(other);
     }
-    else if (PyDict_CheckExact(other)) {
+    else if (PyAnyDict_CheckExact(other)) {
         other_size = PyDict_GET_SIZE(other);
     }
     else {
@@ -1566,7 +1572,7 @@ set_difference(PySetObject *so, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    if (PyDict_CheckExact(other)) {
+    if (PyAnyDict_CheckExact(other)) {
         while (set_next(so, &pos, &entry)) {
             key = entry->key;
             hash = entry->hash;
@@ -1664,7 +1670,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
     if ((PyObject *)so == other)
         return set_clear(so, NULL);
 
-    if (PyDict_CheckExact(other)) {
+    if (PyAnyDict_CheckExact(other)) {
         PyObject *value;
         while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
             Py_INCREF(key);

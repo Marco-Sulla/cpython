@@ -31,6 +31,18 @@ typedef struct {
     PyObject **ma_values;
 } PyDictObject;
 
+typedef struct {
+    PyObject_HEAD
+    
+    Py_ssize_t ma_used;
+    uint64_t ma_version_tag;
+    PyDictKeysObject *ma_keys;
+    PyObject **ma_values;
+
+    Py_hash_t _hash;
+    int _hash_calculated;
+} PyFrozenDictObject;
+
 PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
                                        Py_hash_t hash);
 PyAPI_FUNC(PyObject *) _PyDict_GetItemIdWithError(PyObject *dp,
@@ -75,6 +87,7 @@ PyAPI_FUNC(int) _PyDict_SetItemId(PyObject *dp, struct _Py_Identifier *key, PyOb
 
 PyAPI_FUNC(int) _PyDict_DelItemId(PyObject *mp, struct _Py_Identifier *key);
 PyAPI_FUNC(void) _PyDict_DebugMallocStats(FILE *out);
+PyAPI_FUNC(void) _PyFrozenDict_DebugMallocStats(FILE *out);
 
 int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
 PyObject *_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);

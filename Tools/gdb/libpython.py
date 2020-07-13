@@ -697,6 +697,10 @@ class PyDictObjectPtr(PyObjectPtr):
             proxy_key = pyop_key.proxyval(visited)
             proxy_value = pyop_value.proxyval(visited)
             result[proxy_key] = proxy_value
+        
+        if self.safe_tp_name() == "frozendict":
+            return frozendict(result)
+        
         return result
 
     def write_repr(self, out, visited):

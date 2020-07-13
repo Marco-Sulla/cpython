@@ -2772,7 +2772,7 @@ _PyArg_NoKeywords(const char *funcname, PyObject *kwargs)
     if (kwargs == NULL) {
         return 1;
     }
-    if (!PyDict_CheckExact(kwargs)) {
+    if (!PyAnyDict_CheckExact(kwargs)) {
         PyErr_BadInternalCall();
         return 0;
     }

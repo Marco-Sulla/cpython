@@ -2685,6 +2685,7 @@ type_checks = {
     '&PySet_Type': ('PySet_Check', 'set'),
     '&PyFrozenSet_Type': ('PyFrozenSet_Check', 'frozenset'),
     '&PyDict_Type': ('PyDict_Check', 'dict'),
+    '&PyFrozenDict_Type': ('PyFrozenDict_Check', 'frozendict'),
     '&PyUnicode_Type': ('PyUnicode_Check', 'str'),
     '&PyBytes_Type': ('PyBytes_Check', 'bytes'),
     '&PyByteArray_Type': ('PyByteArray_Check', 'bytearray'),

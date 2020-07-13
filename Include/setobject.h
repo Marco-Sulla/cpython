@@ -87,6 +87,7 @@ PyAPI_FUNC(int) PySet_Contains(PyObject *anyset, PyObject *key);
 PyAPI_FUNC(int) PySet_Discard(PyObject *set, PyObject *key);
 PyAPI_FUNC(PyObject *) PySet_Pop(PyObject *set);
 PyAPI_FUNC(Py_ssize_t) PySet_Size(PyObject *anyset);
+PyAPI_FUNC(Py_hash_t) PyFrozenSet_Hash(PyObject*);
 
 #define PyFrozenSet_CheckExact(ob) (Py_TYPE(ob) == &PyFrozenSet_Type)
 #define PyAnySet_CheckExact(ob) \

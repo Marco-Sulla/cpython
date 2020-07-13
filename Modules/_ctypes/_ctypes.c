@@ -2675,7 +2675,7 @@ KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
         Py_DECREF(keep);
         return -1;
     }
-    if (ob->b_objects == NULL || !PyDict_CheckExact(ob->b_objects)) {
+    if (ob->b_objects == NULL || !PyAnyDict_CheckExact(ob->b_objects)) {
         Py_XSETREF(ob->b_objects, keep); /* refcount consumed */
         return 0;
     }
@@ -5569,7 +5569,7 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
         }
         Py_XINCREF(obj->b_objects);
         result->b_objects = obj->b_objects;
-        if (result->b_objects && PyDict_CheckExact(result->b_objects)) {
+        if (result->b_objects && PyAnyDict_CheckExact(result->b_objects)) {
             PyObject *index;
             int rc;
             index = PyLong_FromVoidPtr((void *)src);

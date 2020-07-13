@@ -373,7 +373,7 @@ import_get_module(PyThreadState *tstate, PyObject *name)
 
     PyObject *m;
     Py_INCREF(modules);
-    if (PyDict_CheckExact(modules)) {
+    if (PyAnyDict_CheckExact(modules)) {
         m = PyDict_GetItemWithError(modules, name);  /* borrowed */
         Py_XINCREF(m);
     }
@@ -525,7 +525,7 @@ _PyImport_Cleanup(PyThreadState *tstate)
 
     /* Remove all modules from sys.modules, hoping that garbage collection
        can reclaim most of them. */
-    if (PyDict_CheckExact(modules)) {
+    if (PyAnyDict_CheckExact(modules)) {
         Py_ssize_t pos = 0;
         PyObject *key, *value;
         while (PyDict_Next(modules, &pos, &key, &value)) {
@@ -557,7 +557,7 @@ _PyImport_Cleanup(PyThreadState *tstate)
     }
 
     /* Clear the modules dict. */
-    if (PyDict_CheckExact(modules)) {
+    if (PyAnyDict_CheckExact(modules)) {
         PyDict_Clear(modules);
     }
     else {
@@ -851,7 +851,7 @@ import_add_module(PyThreadState *tstate, PyObject *name)
     }
 
     PyObject *m;
-    if (PyDict_CheckExact(modules)) {
+    if (PyAnyDict_CheckExact(modules)) {
         m = PyDict_GetItemWithError(modules, name);
     }
     else {

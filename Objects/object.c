@@ -1795,6 +1795,7 @@ _PyTypes_Init(void)
     INIT_TYPE(&PySuper_Type, "super");
     INIT_TYPE(&PyRange_Type, "range");
     INIT_TYPE(&PyDict_Type, "dict");
+    INIT_TYPE(&PyFrozenDict_Type, "frozendict");
     INIT_TYPE(&PyDictKeys_Type, "dict keys");
     INIT_TYPE(&PyDictValues_Type, "dict values");
     INIT_TYPE(&PyDictItems_Type, "dict items");
@@ -1966,6 +1967,7 @@ void
 _PyObject_DebugTypeStats(FILE *out)
 {
     _PyDict_DebugMallocStats(out);
+    _PyFrozenDict_DebugMallocStats(out);
     _PyFloat_DebugMallocStats(out);
     _PyFrame_DebugMallocStats(out);
     _PyList_DebugMallocStats(out);

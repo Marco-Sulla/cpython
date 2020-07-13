@@ -977,7 +977,7 @@ static PyMappingMethods mappingproxy_as_mapping = {
 static int
 mappingproxy_contains(mappingproxyobject *pp, PyObject *key)
 {
-    if (PyDict_CheckExact(pp->mapping))
+    if (PyAnyDict_CheckExact(pp->mapping))
         return PyDict_Contains(pp->mapping, key);
     else
         return PySequence_Contains(pp->mapping, key);

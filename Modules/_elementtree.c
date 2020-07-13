@@ -161,7 +161,7 @@ list_join(PyObject* list)
 static int
 is_empty_dict(PyObject *obj)
 {
-    return PyDict_CheckExact(obj) && PyDict_GET_SIZE(obj) == 0;
+    return PyAnyDict_CheckExact(obj) && PyDict_GET_SIZE(obj) == 0;
 }
 
 
@@ -876,7 +876,7 @@ deepcopy(PyObject *object, PyObject *memo)
     }
 
     if (Py_REFCNT(object) == 1) {
-        if (PyDict_CheckExact(object)) {
+        if (PyAnyDict_CheckExact(object)) {
             PyObject *key, *value;
             Py_ssize_t pos = 0;
             int simple = 1;
@@ -1124,7 +1124,7 @@ static PyObject *
 _elementtree_Element___setstate__(ElementObject *self, PyObject *state)
 /*[clinic end generated code: output=ea28bf3491b1f75e input=aaf80abea7c1e3b9]*/
 {
-    if (!PyDict_CheckExact(state)) {
+    if (!PyAnyDict_CheckExact(state)) {
         PyErr_Format(PyExc_TypeError,
                      "Don't know how to unpickle \"%.200R\" as an Element",
                      state);
