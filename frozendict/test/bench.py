@@ -22,8 +22,8 @@ def main():
     
     dictionary_sizes = (8, 1000)
     
-    print_tpl = "Name: {name: <25} Size: {size: >4}; Form: {form: >8}; Type: {type: >10}; Time: {time:.3e}"
-    split_key = '12323f29-c31f-478c-9b15-e7acc5354df9'
+    print_tpl = "Name: {name: <25} Size: {size: >4}; Keys: {keys: >3}; Type: {type: >10}; Time: {time:.3e}"
+    str_key = '12323f29-c31f-478c-9b15-e7acc5354df9'
 
     benchmarks = (
         {"name": "o.get(key)", "code": "get(key)", "setup": "key = getUuid(); get = o.get", }, 
@@ -66,26 +66,26 @@ def main():
             d1[getUuid()] = val
             d2[i] = val
         
-        d1[split_key] = getUuid()
+        d1[str_key] = getUuid()
         d2[999] = 999
 
         fd1 = frozendict(d1)
         fd2 = frozendict(d2)
         
-        dict_collection.append({"split": ((d1, fd1), split_key), "combined": ((d2, fd2), 6)})
+        dict_collection.append({"str": ((d1, fd1), str_key), "int": ((d2, fd2), 6)})
         
     for benchmark in benchmarks:
         print("################################################################################")
         
         for dict_collection_entry in dict_collection:
-            for (dict_form, (dicts, one_key)) in dict_collection_entry.items():
+            for (dict_keys, (dicts, one_key)) in dict_collection_entry.items():
                 print("////////////////////////////////////////////////////////////////////////////////")
                 
                 for o in dicts:
                     if benchmark["name"] == "hash(o)" and type(o) == dict:
                         continue
                     
-                    if benchmark["name"] == "constructor(**d)" and dict_form == "combined":
+                    if benchmark["name"] == "constructor(**d)" and dict_keys == "int":
                         continue
                     
                     d = dicts[0]
@@ -98,7 +98,7 @@ def main():
 
                     print(print_tpl.format(
                         name = "`{}`;".format(benchmark["name"]), 
-                        form = dict_form, 
+                        keys = dict_keys, 
                         size = len(d), 
                         type = type(o).__name__, 
                         time = t, 
