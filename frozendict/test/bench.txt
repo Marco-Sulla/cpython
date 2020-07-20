@@ -1,0 +1,343 @@
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.get(key)`;             Size:    8; Keys:      int; Type:       dict; Time: 2.909e-08
+Name: `o.get(key)`;             Size:    8; Keys:      int; Type: frozendict; Time: 2.925e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.get(key)`;             Size:    8; Keys:      str; Type:       dict; Time: 3.043e-08
+Name: `o.get(key)`;             Size:    8; Keys:      str; Type: frozendict; Time: 2.927e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.get(key)`;             Size: 1000; Keys:      int; Type:       dict; Time: 2.994e-08
+Name: `o.get(key)`;             Size: 1000; Keys:      int; Type: frozendict; Time: 3.005e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.get(key)`;             Size: 1000; Keys:      str; Type:       dict; Time: 3.046e-08
+Name: `o.get(key)`;             Size: 1000; Keys:      str; Type: frozendict; Time: 3.003e-08
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `o[key]`;                 Size:    8; Keys:      int; Type:       dict; Time: 4.038e-08
+Name: `o[key]`;                 Size:    8; Keys:      int; Type: frozendict; Time: 4.069e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o[key]`;                 Size:    8; Keys:      str; Type:       dict; Time: 4.318e-08
+Name: `o[key]`;                 Size:    8; Keys:      str; Type: frozendict; Time: 4.565e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o[key]`;                 Size: 1000; Keys:      int; Type:       dict; Time: 4.686e-08
+Name: `o[key]`;                 Size: 1000; Keys:      int; Type: frozendict; Time: 4.511e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o[key]`;                 Size: 1000; Keys:      str; Type:       dict; Time: 4.375e-08
+Name: `o[key]`;                 Size: 1000; Keys:      str; Type: frozendict; Time: 4.708e-08
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `key in o`;               Size:    8; Keys:      int; Type:       dict; Time: 2.859e-08
+Name: `key in o`;               Size:    8; Keys:      int; Type: frozendict; Time: 2.931e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `key in o`;               Size:    8; Keys:      str; Type:       dict; Time: 2.962e-08
+Name: `key in o`;               Size:    8; Keys:      str; Type: frozendict; Time: 2.933e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `key in o`;               Size: 1000; Keys:      int; Type:       dict; Time: 3.002e-08
+Name: `key in o`;               Size: 1000; Keys:      int; Type: frozendict; Time: 3.012e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `key in o`;               Size: 1000; Keys:      str; Type:       dict; Time: 3.039e-08
+Name: `key in o`;               Size: 1000; Keys:      str; Type: frozendict; Time: 3.016e-08
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `key not in o`;           Size:    8; Keys:      int; Type:       dict; Time: 2.875e-08
+Name: `key not in o`;           Size:    8; Keys:      int; Type: frozendict; Time: 2.880e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `key not in o`;           Size:    8; Keys:      str; Type:       dict; Time: 2.942e-08
+Name: `key not in o`;           Size:    8; Keys:      str; Type: frozendict; Time: 2.884e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `key not in o`;           Size: 1000; Keys:      int; Type:       dict; Time: 2.997e-08
+Name: `key not in o`;           Size: 1000; Keys:      int; Type: frozendict; Time: 2.969e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `key not in o`;           Size: 1000; Keys:      str; Type:       dict; Time: 3.135e-08
+Name: `key not in o`;           Size: 1000; Keys:      str; Type: frozendict; Time: 2.976e-08
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.dumps(o)`;        Size:    8; Keys:      int; Type:       dict; Time: 8.809e-07
+Name: `pickle.dumps(o)`;        Size:    8; Keys:      int; Type: frozendict; Time: 9.023e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.dumps(o)`;        Size:    8; Keys:      str; Type:       dict; Time: 7.524e-07
+Name: `pickle.dumps(o)`;        Size:    8; Keys:      str; Type: frozendict; Time: 6.972e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.dumps(o)`;        Size: 1000; Keys:      int; Type:       dict; Time: 2.052e-04
+Name: `pickle.dumps(o)`;        Size: 1000; Keys:      int; Type: frozendict; Time: 2.037e-04
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.dumps(o)`;        Size: 1000; Keys:      str; Type:       dict; Time: 6.899e-05
+Name: `pickle.dumps(o)`;        Size: 1000; Keys:      str; Type: frozendict; Time: 6.813e-05
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.loads(dump)`;     Size:    8; Keys:      int; Type:       dict; Time: 1.515e-06
+Name: `pickle.loads(dump)`;     Size:    8; Keys:      int; Type: frozendict; Time: 1.924e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.loads(dump)`;     Size:    8; Keys:      str; Type:       dict; Time: 9.832e-07
+Name: `pickle.loads(dump)`;     Size:    8; Keys:      str; Type: frozendict; Time: 1.438e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.loads(dump)`;     Size: 1000; Keys:      int; Type:       dict; Time: 1.568e-04
+Name: `pickle.loads(dump)`;     Size: 1000; Keys:      int; Type: frozendict; Time: 1.694e-04
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.loads(dump)`;     Size: 1000; Keys:      str; Type:       dict; Time: 8.818e-05
+Name: `pickle.loads(dump)`;     Size: 1000; Keys:      str; Type: frozendict; Time: 1.091e-04
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `hash(o)`;                Size:    8; Keys:      int; Type: frozendict; Time: 6.481e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `hash(o)`;                Size:    8; Keys:      str; Type: frozendict; Time: 6.406e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `hash(o)`;                Size: 1000; Keys:      int; Type: frozendict; Time: 6.486e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `hash(o)`;                Size: 1000; Keys:      str; Type: frozendict; Time: 6.432e-08
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `len(o)`;                 Size:    8; Keys:      int; Type:       dict; Time: 5.150e-08
+Name: `len(o)`;                 Size:    8; Keys:      int; Type: frozendict; Time: 5.181e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `len(o)`;                 Size:    8; Keys:      str; Type:       dict; Time: 5.140e-08
+Name: `len(o)`;                 Size:    8; Keys:      str; Type: frozendict; Time: 5.153e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `len(o)`;                 Size: 1000; Keys:      int; Type:       dict; Time: 6.064e-08
+Name: `len(o)`;                 Size: 1000; Keys:      int; Type: frozendict; Time: 6.061e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `len(o)`;                 Size: 1000; Keys:      str; Type:       dict; Time: 6.082e-08
+Name: `len(o)`;                 Size: 1000; Keys:      str; Type: frozendict; Time: 6.069e-08
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.keys()`;               Size:    8; Keys:      int; Type:       dict; Time: 3.251e-08
+Name: `o.keys()`;               Size:    8; Keys:      int; Type: frozendict; Time: 3.257e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.keys()`;               Size:    8; Keys:      str; Type:       dict; Time: 3.252e-08
+Name: `o.keys()`;               Size:    8; Keys:      str; Type: frozendict; Time: 3.249e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.keys()`;               Size: 1000; Keys:      int; Type:       dict; Time: 3.254e-08
+Name: `o.keys()`;               Size: 1000; Keys:      int; Type: frozendict; Time: 3.302e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.keys()`;               Size: 1000; Keys:      str; Type:       dict; Time: 3.253e-08
+Name: `o.keys()`;               Size: 1000; Keys:      str; Type: frozendict; Time: 3.295e-08
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.values()`;             Size:    8; Keys:      int; Type:       dict; Time: 3.254e-08
+Name: `o.values()`;             Size:    8; Keys:      int; Type: frozendict; Time: 3.311e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.values()`;             Size:    8; Keys:      str; Type:       dict; Time: 3.332e-08
+Name: `o.values()`;             Size:    8; Keys:      str; Type: frozendict; Time: 3.333e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.values()`;             Size: 1000; Keys:      int; Type:       dict; Time: 3.325e-08
+Name: `o.values()`;             Size: 1000; Keys:      int; Type: frozendict; Time: 3.330e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.values()`;             Size: 1000; Keys:      str; Type:       dict; Time: 3.354e-08
+Name: `o.values()`;             Size: 1000; Keys:      str; Type: frozendict; Time: 3.258e-08
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.items()`;              Size:    8; Keys:      int; Type:       dict; Time: 3.332e-08
+Name: `o.items()`;              Size:    8; Keys:      int; Type: frozendict; Time: 3.312e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.items()`;              Size:    8; Keys:      str; Type:       dict; Time: 3.333e-08
+Name: `o.items()`;              Size:    8; Keys:      str; Type: frozendict; Time: 3.330e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.items()`;              Size: 1000; Keys:      int; Type:       dict; Time: 3.333e-08
+Name: `o.items()`;              Size: 1000; Keys:      int; Type: frozendict; Time: 3.328e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.items()`;              Size: 1000; Keys:      str; Type:       dict; Time: 3.332e-08
+Name: `o.items()`;              Size: 1000; Keys:      str; Type: frozendict; Time: 3.333e-08
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `iter(o)`;                Size:    8; Keys:      int; Type:       dict; Time: 6.598e-08
+Name: `iter(o)`;                Size:    8; Keys:      int; Type: frozendict; Time: 6.586e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `iter(o)`;                Size:    8; Keys:      str; Type:       dict; Time: 6.588e-08
+Name: `iter(o)`;                Size:    8; Keys:      str; Type: frozendict; Time: 6.599e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `iter(o)`;                Size: 1000; Keys:      int; Type:       dict; Time: 6.597e-08
+Name: `iter(o)`;                Size: 1000; Keys:      int; Type: frozendict; Time: 6.581e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `iter(o)`;                Size: 1000; Keys:      str; Type:       dict; Time: 6.580e-08
+Name: `iter(o)`;                Size: 1000; Keys:      str; Type: frozendict; Time: 6.580e-08
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o`;             Size:    8; Keys:      int; Type:       dict; Time: 1.033e-07
+Name: `for x in o`;             Size:    8; Keys:      int; Type: frozendict; Time: 9.956e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o`;             Size:    8; Keys:      str; Type:       dict; Time: 1.030e-07
+Name: `for x in o`;             Size:    8; Keys:      str; Type: frozendict; Time: 9.935e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o`;             Size: 1000; Keys:      int; Type:       dict; Time: 8.731e-06
+Name: `for x in o`;             Size: 1000; Keys:      int; Type: frozendict; Time: 8.381e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o`;             Size: 1000; Keys:      str; Type:       dict; Time: 8.172e-06
+Name: `for x in o`;             Size: 1000; Keys:      str; Type: frozendict; Time: 8.001e-06
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o.keys()`;      Size:    8; Keys:      int; Type:       dict; Time: 9.316e-08
+Name: `for x in o.keys()`;      Size:    8; Keys:      int; Type: frozendict; Time: 8.911e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o.keys()`;      Size:    8; Keys:      str; Type:       dict; Time: 9.307e-08
+Name: `for x in o.keys()`;      Size:    8; Keys:      str; Type: frozendict; Time: 8.898e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o.keys()`;      Size: 1000; Keys:      int; Type:       dict; Time: 8.718e-06
+Name: `for x in o.keys()`;      Size: 1000; Keys:      int; Type: frozendict; Time: 8.358e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o.keys()`;      Size: 1000; Keys:      str; Type:       dict; Time: 8.143e-06
+Name: `for x in o.keys()`;      Size: 1000; Keys:      str; Type: frozendict; Time: 7.984e-06
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o.values()`;    Size:    8; Keys:      int; Type:       dict; Time: 9.397e-08
+Name: `for x in o.values()`;    Size:    8; Keys:      int; Type: frozendict; Time: 8.512e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o.values()`;    Size:    8; Keys:      str; Type:       dict; Time: 9.398e-08
+Name: `for x in o.values()`;    Size:    8; Keys:      str; Type: frozendict; Time: 8.504e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o.values()`;    Size: 1000; Keys:      int; Type:       dict; Time: 8.582e-06
+Name: `for x in o.values()`;    Size: 1000; Keys:      int; Type: frozendict; Time: 7.130e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o.values()`;    Size: 1000; Keys:      str; Type:       dict; Time: 8.502e-06
+Name: `for x in o.values()`;    Size: 1000; Keys:      str; Type: frozendict; Time: 7.107e-06
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o.items()`;     Size:    8; Keys:      int; Type:       dict; Time: 1.971e-07
+Name: `for x in o.items()`;     Size:    8; Keys:      int; Type: frozendict; Time: 1.876e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o.items()`;     Size:    8; Keys:      str; Type:       dict; Time: 1.972e-07
+Name: `for x in o.items()`;     Size:    8; Keys:      str; Type: frozendict; Time: 1.868e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o.items()`;     Size: 1000; Keys:      int; Type:       dict; Time: 1.726e-05
+Name: `for x in o.items()`;     Size: 1000; Keys:      int; Type: frozendict; Time: 1.713e-05
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in o.items()`;     Size: 1000; Keys:      str; Type:       dict; Time: 1.725e-05
+Name: `for x in o.items()`;     Size: 1000; Keys:      str; Type: frozendict; Time: 1.717e-05
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in iter(o)`;       Size:    8; Keys:      int; Type:       dict; Time: 1.377e-07
+Name: `for x in iter(o)`;       Size:    8; Keys:      int; Type: frozendict; Time: 1.339e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in iter(o)`;       Size:    8; Keys:      str; Type:       dict; Time: 1.381e-07
+Name: `for x in iter(o)`;       Size:    8; Keys:      str; Type: frozendict; Time: 1.339e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in iter(o)`;       Size: 1000; Keys:      int; Type:       dict; Time: 8.789e-06
+Name: `for x in iter(o)`;       Size: 1000; Keys:      int; Type: frozendict; Time: 8.447e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `for x in iter(o)`;       Size: 1000; Keys:      str; Type:       dict; Time: 8.230e-06
+Name: `for x in iter(o)`;       Size: 1000; Keys:      str; Type: frozendict; Time: 8.046e-06
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(d)`;         Size:    8; Keys:      int; Type:       dict; Time: 2.956e-07
+Name: `constructor(d)`;         Size:    8; Keys:      int; Type: frozendict; Time: 2.100e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(d)`;         Size:    8; Keys:      str; Type:       dict; Time: 2.922e-07
+Name: `constructor(d)`;         Size:    8; Keys:      str; Type: frozendict; Time: 2.095e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(d)`;         Size: 1000; Keys:      int; Type:       dict; Time: 2.401e-05
+Name: `constructor(d)`;         Size: 1000; Keys:      int; Type: frozendict; Time: 1.309e-05
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(d)`;         Size: 1000; Keys:      str; Type:       dict; Time: 1.822e-05
+Name: `constructor(d)`;         Size: 1000; Keys:      str; Type: frozendict; Time: 1.115e-05
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(d.items())`; Size:    8; Keys:      int; Type:       dict; Time: 3.712e-07
+Name: `constructor(d.items())`; Size:    8; Keys:      int; Type: frozendict; Time: 3.743e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(d.items())`; Size:    8; Keys:      str; Type:       dict; Time: 3.814e-07
+Name: `constructor(d.items())`; Size:    8; Keys:      str; Type: frozendict; Time: 4.344e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(d.items())`; Size: 1000; Keys:      int; Type:       dict; Time: 4.173e-05
+Name: `constructor(d.items())`; Size: 1000; Keys:      int; Type: frozendict; Time: 3.252e-05
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(d.items())`; Size: 1000; Keys:      str; Type:       dict; Time: 3.140e-05
+Name: `constructor(d.items())`; Size: 1000; Keys:      str; Type: frozendict; Time: 3.275e-05
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(**d)`;       Size:    8; Keys:      int; Type:       dict; Time: 2.678e-07
+Name: `constructor(**d)`;       Size:    8; Keys:      int; Type: frozendict; Time: 1.867e-07
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(**d)`;       Size: 1000; Keys:      int; Type:       dict; Time: 2.375e-05
+Name: `constructor(**d)`;       Size: 1000; Keys:      int; Type: frozendict; Time: 1.305e-05
+////////////////////////////////////////////////////////////////////////////////
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(self)`;      Size:    8; Keys:      int; Type:       dict; Time: 2.960e-07
+Name: `constructor(self)`;      Size:    8; Keys:      int; Type: frozendict; Time: 5.872e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(self)`;      Size:    8; Keys:      str; Type:       dict; Time: 2.923e-07
+Name: `constructor(self)`;      Size:    8; Keys:      str; Type: frozendict; Time: 5.879e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(self)`;      Size: 1000; Keys:      int; Type:       dict; Time: 2.409e-05
+Name: `constructor(self)`;      Size: 1000; Keys:      int; Type: frozendict; Time: 5.866e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `constructor(self)`;      Size: 1000; Keys:      str; Type:       dict; Time: 1.821e-05
+Name: `constructor(self)`;      Size: 1000; Keys:      str; Type: frozendict; Time: 5.850e-08
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.copy()`;               Size:    8; Keys:      int; Type:       dict; Time: 8.878e-08
+Name: `o.copy()`;               Size:    8; Keys:      int; Type: frozendict; Time: 4.505e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.copy()`;               Size:    8; Keys:      str; Type:       dict; Time: 8.988e-08
+Name: `o.copy()`;               Size:    8; Keys:      str; Type: frozendict; Time: 4.508e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.copy()`;               Size: 1000; Keys:      int; Type:       dict; Time: 6.481e-06
+Name: `o.copy()`;               Size: 1000; Keys:      int; Type: frozendict; Time: 4.512e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `o.copy()`;               Size: 1000; Keys:      str; Type:       dict; Time: 5.631e-06
+Name: `o.copy()`;               Size: 1000; Keys:      str; Type: frozendict; Time: 4.507e-08
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `d1 == d2`;               Size:    8; Keys:      int; Type:       dict; Time: 1.070e-07
+Name: `d1 == d2`;               Size:    8; Keys:      int; Type: frozendict; Time: 1.070e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `d1 == d2`;               Size:    8; Keys:      str; Type:       dict; Time: 1.098e-07
+Name: `d1 == d2`;               Size:    8; Keys:      str; Type: frozendict; Time: 1.098e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `d1 == d2`;               Size: 1000; Keys:      int; Type:       dict; Time: 1.321e-05
+Name: `d1 == d2`;               Size: 1000; Keys:      int; Type: frozendict; Time: 1.336e-05
+////////////////////////////////////////////////////////////////////////////////
+Name: `d1 == d2`;               Size: 1000; Keys:      str; Type:       dict; Time: 9.668e-06
+Name: `d1 == d2`;               Size: 1000; Keys:      str; Type: frozendict; Time: 9.686e-06
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `self == self`;           Size:    8; Keys:      int; Type:       dict; Time: 1.069e-07
+Name: `self == self`;           Size:    8; Keys:      int; Type: frozendict; Time: 1.044e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `self == self`;           Size:    8; Keys:      str; Type:       dict; Time: 1.099e-07
+Name: `self == self`;           Size:    8; Keys:      str; Type: frozendict; Time: 1.426e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `self == self`;           Size: 1000; Keys:      int; Type:       dict; Time: 1.321e-05
+Name: `self == self`;           Size: 1000; Keys:      int; Type: frozendict; Time: 1.300e-05
+////////////////////////////////////////////////////////////////////////////////
+Name: `self == self`;           Size: 1000; Keys:      str; Type:       dict; Time: 9.672e-06
+Name: `self == self`;           Size: 1000; Keys:      str; Type: frozendict; Time: 1.197e-05
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `class.fromkeys()`;       Size:    8; Keys:      int; Type:       dict; Time: 3.410e-07
+Name: `class.fromkeys()`;       Size:    8; Keys:      int; Type: frozendict; Time: 3.614e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `class.fromkeys()`;       Size:    8; Keys:      str; Type:       dict; Time: 3.769e-07
+Name: `class.fromkeys()`;       Size:    8; Keys:      str; Type: frozendict; Time: 3.872e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `class.fromkeys()`;       Size: 1000; Keys:      int; Type:       dict; Time: 3.869e-05
+Name: `class.fromkeys()`;       Size: 1000; Keys:      int; Type: frozendict; Time: 2.470e-05
+////////////////////////////////////////////////////////////////////////////////
+Name: `class.fromkeys()`;       Size: 1000; Keys:      str; Type:       dict; Time: 2.808e-05
+Name: `class.fromkeys()`;       Size: 1000; Keys:      str; Type: frozendict; Time: 2.779e-05
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `repr(o)`;                Size:    8; Keys:      int; Type:       dict; Time: 2.711e-06
+Name: `repr(o)`;                Size:    8; Keys:      int; Type: frozendict; Time: 3.048e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `repr(o)`;                Size:    8; Keys:      str; Type:       dict; Time: 1.914e-06
+Name: `repr(o)`;                Size:    8; Keys:      str; Type: frozendict; Time: 2.187e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `repr(o)`;                Size: 1000; Keys:      int; Type:       dict; Time: 2.496e-04
+Name: `repr(o)`;                Size: 1000; Keys:      int; Type: frozendict; Time: 2.771e-04
+////////////////////////////////////////////////////////////////////////////////
+Name: `repr(o)`;                Size: 1000; Keys:      str; Type:       dict; Time: 1.942e-04
+Name: `repr(o)`;                Size: 1000; Keys:      str; Type: frozendict; Time: 2.096e-04
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `str(o)`;                 Size:    8; Keys:      int; Type:       dict; Time: 2.772e-06
+Name: `str(o)`;                 Size:    8; Keys:      int; Type: frozendict; Time: 3.126e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `str(o)`;                 Size:    8; Keys:      str; Type:       dict; Time: 2.000e-06
+Name: `str(o)`;                 Size:    8; Keys:      str; Type: frozendict; Time: 2.259e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `str(o)`;                 Size: 1000; Keys:      int; Type:       dict; Time: 2.499e-04
+Name: `str(o)`;                 Size: 1000; Keys:      int; Type: frozendict; Time: 2.774e-04
+////////////////////////////////////////////////////////////////////////////////
+Name: `str(o)`;                 Size: 1000; Keys:      str; Type:       dict; Time: 1.948e-04
+Name: `str(o)`;                 Size: 1000; Keys:      str; Type: frozendict; Time: 2.102e-04
