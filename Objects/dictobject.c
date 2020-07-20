@@ -1011,12 +1011,15 @@ find_empty_slot(PyDictKeysObject *keys, Py_hash_t hash)
 
     const size_t mask = DK_MASK(keys);
     size_t i = hash & mask;
+    size_t perturb = hash;
     Py_ssize_t ix = dictkeys_get_index(keys, i);
-    for (size_t perturb = hash; ix >= 0;) {
+    
+    while (ix >= 0) {
         perturb >>= PERTURB_SHIFT;
         i = (i*5 + perturb + 1) & mask;
         ix = dictkeys_get_index(keys, i);
     }
+    
     return i;
 }
 
@@ -1117,6 +1120,64 @@ Fail:
     return -1;
 }
 
+static int frozendict_insert(PyDictObject *mp, PyObject *key, Py_hash_t hash, 
+                             PyObject *value, int empty) {
+    Py_ssize_t ix;
+    PyObject *old_value;
+    
+    Py_INCREF(key);
+    Py_INCREF(value);
+    
+    if (! empty) {
+        ix = mp->ma_keys->dk_lookup(mp, key, hash, &old_value);
+        
+        if (ix == DKIX_ERROR) {
+            Py_DECREF(value);
+            Py_DECREF(key);
+            return -1;
+        }
+        
+        empty = (ix == DKIX_EMPTY);
+    }
+    
+    if (empty) {
+        PyDictKeysObject* keys = mp->ma_keys;
+        
+        assert(PyUnicode_CheckExact(key) || keys->dk_lookup == lookdict);
+        
+        /* Insert into new slot. */
+        Py_ssize_t hashpos = find_empty_slot(keys, hash);
+        Py_ssize_t dk_nentries = keys->dk_nentries;
+        PyDictKeyEntry* ep = &DK_ENTRIES(keys)[dk_nentries];
+        dictkeys_set_index(keys, hashpos, dk_nentries);
+        ep->me_key = key;
+        ep->me_hash = hash;
+        assert (mp->ma_values[dk_nentries] == NULL);
+        mp->ma_values[dk_nentries] = value;
+        mp->ma_used++;
+        keys->dk_usable--;
+        keys->dk_nentries++;
+        assert(keys->dk_usable >= 0);
+        ASSERT_CONSISTENT(mp);
+        return 0;
+    }
+
+    mp->ma_values[ix] = value;
+
+    if (old_value == NULL) {
+        /* pending state */
+        assert(ix == mp->ma_used);
+        mp->ma_used++;
+    }
+    else {
+        Py_DECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
+    }
+    
+    Py_DECREF(key);
+    ASSERT_CONSISTENT(mp);
+    return 0;
+}
+
 // Same to insertdict but specialized for ma_keys = Py_EMPTY_KEYS.
 static int
 insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
@@ -1168,6 +1229,14 @@ build_indices(PyDictKeysObject *keys, PyDictKeyEntry *ep, Py_ssize_t n)
         }
         dictkeys_set_index(keys, i, ix);
     }
+}
+
+static void build_dict_indices(PyDictObject* mp, PyDictKeysObject* keys) {
+    const Py_ssize_t numentries = mp->ma_used;
+    build_indices(keys, DK_ENTRIES(keys), numentries);
+    keys->dk_usable -= numentries;
+    keys->dk_nentries = numentries;
+    mp->ma_keys = keys;
 }
 
 /*
@@ -1266,10 +1335,56 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
             PyObject_FREE(oldkeys);
         }
     }
-
+    
     build_indices(mp->ma_keys, newentries, numentries);
     mp->ma_keys->dk_usable -= numentries;
     mp->ma_keys->dk_nentries = numentries;
+    return 0;
+}
+
+static Py_ssize_t dict_get_min_size(const Py_ssize_t minsize) {
+    /* Find the smallest table size > minused. */
+    Py_ssize_t newsize = PyDict_MINSIZE;
+    
+    while (newsize < minsize && newsize > 0) {
+        newsize <<= 1;
+    }
+    
+    return newsize;
+}
+
+static int frozendict_resize_empty(PyDictObject* mp, const Py_ssize_t minsize) {
+    /* Find the smallest table size > minused. */
+    const Py_ssize_t newsize = dict_get_min_size(minsize);
+    
+    if (newsize <= 0) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    
+    /* Allocate a new table. */
+    PyDictKeysObject* keys = new_keys_object(newsize);
+    keys->dk_lookup = lookdict_split;
+    
+    if (keys == NULL) {
+        return -1;
+    }
+    
+    const Py_ssize_t size = USABLE_FRACTION(DK_SIZE(keys));
+    PyObject** values = new_values(size);
+    
+    for (int i = 0; i < size; i++)
+    {
+        values[i] = NULL;
+    }
+    
+    mp->ma_values = values;
+    
+    // New table must be large enough.
+    assert(keys->dk_usable >= mp->ma_used);
+    
+    build_dict_indices(mp, keys);
+    
     return 0;
 }
 
@@ -2421,6 +2536,146 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
     return result;
 }
 
+static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
+    /* We accept for the argument either a concrete dictionary object,
+     * or an abstract "mapping" object.  For the former, we can do
+     * things quite efficiently.  For the latter, we only require that
+     * PyMapping_Keys() and PyObject_GetItem() be supported.
+     */
+    assert(a != NULL);
+    assert(PyDict_Check(a));
+    assert(b != NULL);
+    
+    PyDictObject* mp = (PyDictObject*) a;
+    
+    if (PyDict_Check(b) && (Py_TYPE(b)->tp_iter == (getiterfunc)dict_iter)) {
+        const PyDictObject* other = (PyDictObject*)b;
+        PyDictKeyEntry* ep0 = DK_ENTRIES(other->ma_keys);
+        PyDictKeyEntry* entry;
+        PyObject* key;
+        PyObject* value;
+        Py_hash_t hash;
+        
+        const int is_other_split = other->ma_values != NULL;
+        
+        for (Py_ssize_t i = 0, n = other->ma_keys->dk_nentries; i < n; i++) {
+            entry = &ep0[i];
+            key = entry->me_key;
+            hash = entry->me_hash;
+            
+            if (is_other_split) {
+                value = other->ma_values[i];
+            }
+            else {
+                value = entry->me_value;
+            }
+            
+            if (value != NULL) {
+                Py_INCREF(key);
+                Py_INCREF(value);
+                int err = frozendict_insert(mp, key, hash, value, empty);
+                Py_DECREF(value);
+                Py_DECREF(key);
+                
+                if (err != 0) {
+                    return -1;
+                }
+                
+                // enough? can be skipped if frozendict? can be forced to skip?
+                if (n != other->ma_keys->dk_nentries) {
+                    PyErr_SetString(PyExc_RuntimeError,
+                                    "dict mutated during update");
+                    return -1;
+                }
+            }
+        }
+    }
+    else {
+        /* Do it the generic, slower way */
+        PyObject *keys = PyMapping_Keys(b);
+        PyObject *iter;
+        PyObject *key, *value;
+        int status;
+
+        if (keys == NULL)
+            /* Docstring says this is equivalent to E.keys() so
+             * if E doesn't have a .keys() method we want
+             * AttributeError to percolate up.  Might as well
+             * do the same for any other error.
+             */
+            return -1;
+
+        iter = PyObject_GetIter(keys);
+        Py_DECREF(keys);
+        if (iter == NULL)
+            return -1;
+
+        for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
+            value = PyObject_GetItem(b, key);
+            if (value == NULL) {
+                Py_DECREF(iter);
+                Py_DECREF(key);
+                return -1;
+            }
+            status = PyDict_SetItem(a, key, value);
+            Py_DECREF(key);
+            Py_DECREF(value);
+            if (status < 0) {
+                Py_DECREF(iter);
+                return -1;
+            }
+        }
+        Py_DECREF(iter);
+        if (PyErr_Occurred())
+            /* Iterator completed, via error */
+            return -1;
+    }
+    ASSERT_CONSISTENT(a);
+    return 0;
+}
+
+static int frozendict_update_common(
+        PyObject *self, 
+        PyObject *arg, 
+        PyObject *kwds,
+        const char *methname
+) {
+    int result = 0;
+    const int no_arg = (arg == NULL);
+    
+    if (! no_arg) {
+        if (PyAnyDict_CheckExact(arg)) {
+            result = frozendict_merge(self, arg, 1);
+        }
+        else {
+            PyObject *func;
+            
+            _Py_IDENTIFIER(keys);
+            if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+                result = -1;
+            }
+            else if (func != NULL) {
+                Py_DECREF(func);
+                result = frozendict_merge(self, arg, 1);
+            }
+            else {
+                result = PyDict_MergeFromSeq2(self, arg, 1);
+            }
+        }
+    }
+
+    if (result == 0 && kwds != NULL) {
+        if (PyArg_ValidateKeywordArguments(kwds)) {
+            result = frozendict_merge(self, kwds, no_arg);
+        }
+        else {
+            result = -1;
+        }
+    }
+    
+    return result;
+}
+
 /* Note: dict.update() uses the METH_VARARGS|METH_KEYWORDS calling convention.
    Using METH_FASTCALL|METH_KEYWORDS would make dict.update(**dict2) calls
    slower, see the issue #29312. */
@@ -3404,61 +3659,63 @@ static PyObject* empty_frozendict = NULL;
 static PyObject* frozendict_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
     assert(type != NULL && type->tp_alloc != NULL);
     
-    PyObject* iterable = NULL;
+    PyObject* arg = NULL;
     
-    if (! PyArg_UnpackTuple(args, __func__, 0, 1, &iterable)) {
+    if (! PyArg_UnpackTuple(args, __func__, 0, 1, &arg)) {
         return NULL;
     }
     
-    int arg_is_frozendict = (iterable != NULL && PyFrozenDict_CheckExact(iterable));
+    const int arg_is_frozendict = (arg != NULL && PyFrozenDict_CheckExact(arg));
+    const int kwds_size = ((kwds != NULL) 
+        ? ((PyDictObject*) kwds)->ma_used 
+        : 0
+    );
     
     // only argument is a frozendict
-    if (
-        arg_is_frozendict && 
-        (kwds == NULL || ((PyDictObject*) kwds)->ma_used == 0)
-    ) {
-        Py_INCREF(iterable);
+    if (arg_is_frozendict && kwds_size == 0) {
+        Py_INCREF(arg);
         
-        return iterable;
+        return arg;
     }
-
+    
     PyObject* self = type->tp_alloc(type, 0);
 
     if (self == NULL){
         return NULL;
     }
 
-    PyFrozenDictObject* d = (PyFrozenDictObject*) self;
-
     /* The object has been implicitly tracked by tp_alloc */
     if (type == &PyFrozenDict_Type) {
-        _PyObject_GC_UNTRACK(d);
+        _PyObject_GC_UNTRACK(self);
     }
-
-    d->ma_keys = new_keys_object(PyDict_MINSIZE);
-
-    if (d->ma_keys == NULL) {
-        Py_CLEAR(self);
+    
+    const int arg_size = ((arg != NULL) 
+        ? PyObject_Length(arg) 
+        : 0
+    );
+    
+    const int estimated_size = ESTIMATE_SIZE(arg_size + kwds_size);
+    
+    if (frozendict_resize_empty((PyDictObject*) self, estimated_size)) {
+        Py_DECREF(self);
         return NULL;
     }
     
-    d->ma_used = 0;
-    d->_hash = -1;
-    d->_hash_calculated = 0;
+    PyFrozenDictObject* mp = (PyFrozenDictObject*) self;
     
-    if (dict_update_common(self, args, kwds, __func__)) {
-        Py_CLEAR(self);
+    mp->ma_used = 0;
+    mp->_hash = -1;
+    mp->_hash_calculated = 0;
+    
+    if (frozendict_update_common(self, arg, kwds, __func__)) {
+        Py_DECREF(self);
         return NULL;
     }
     
     // if frozendict is empty, return the empty singleton
-    if (d->ma_used == 0) {
+    if (mp->ma_used == 0) {
         if (empty_frozendict == NULL) {
             empty_frozendict = self;
-        }
-        else {
-            // this does not work...
-            // Py_CLEAR(self);
         }
         
         Py_INCREF(empty_frozendict);
@@ -3466,7 +3723,7 @@ static PyObject* frozendict_new(PyTypeObject* type, PyObject* args, PyObject* kw
         return empty_frozendict;
     }
     
-    ASSERT_CONSISTENT(d);
+    ASSERT_CONSISTENT(mp);
 
     return self;
 }
