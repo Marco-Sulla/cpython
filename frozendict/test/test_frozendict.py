@@ -66,7 +66,7 @@ def test_constructor_kwargs(fd2, fd_dict_2):
     assert frozendict(**fd_dict_2) == fd2
 
 def test_constructor_self(fd):
-    # assert fd is frozendict(fd, Sulla="Marco")
+    assert fd == frozendict(fd, Sulla="Marco")
     assert fd is frozendict(fd)
 
 def test_normalget(fd):

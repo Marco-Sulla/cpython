@@ -35,12 +35,13 @@ typedef struct {
     PyObject_HEAD
     
     Py_ssize_t ma_used;
+    PyDictKeysObject* ma_keys;
+    PyObject** ma_values;
+    
     uint64_t ma_version_tag;
-    PyDictKeysObject *ma_keys;
-    PyObject **ma_values;
-
+    
     Py_hash_t _hash;
-    int _hash_calculated;
+    short _hash_calculated;
 } PyFrozenDictObject;
 
 PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
