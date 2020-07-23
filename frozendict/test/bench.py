@@ -4,16 +4,38 @@ def main():
     import timeit
     import uuid
     from string import Template
+    from statistics import stdev
+    import msutils
+    import sys
     
-    
-    def autorange(stmt, setup="pass", repeat=5, globals=None):
+    def autorange(stmt, setup="pass", repeat=5, globals=None, max_retries=100):
         if setup == None:
             setup = "pass"
         
         t = timeit.Timer(stmt=stmt, setup=setup, globals=globals)
         a = t.autorange()
-        number = a[0]
-        return min(*t.repeat(number=number, repeat=repeat), a[1]) / number
+        number = int(a[0] / 5)
+        
+        if number < 1:
+            number = 1
+        
+        data_min = []
+        data = [a[1]]
+        
+        for x in range(max_retries):
+            data.extend(t.repeat(number=number, repeat=repeat))
+            sigma = stdev(data) / number
+            min_data = min(data)
+            result = min_data / number
+            result_magnitude = msutils.magnitudeOrder(result)
+            
+            if 5 * 10**result_magnitude > sigma * 100:
+                return (result, sigma)
+            
+            data_min.append(min_data)
+            data = data_min.copy()
+        
+        raise RuntimeError("Sigma too high!")
     
     
     def getUuid():
@@ -22,7 +44,7 @@ def main():
     
     dictionary_sizes = (8, 1000)
     
-    print_tpl = "Name: {name: <25} Size: {size: >4}; Keys: {keys: >3}; Type: {type: >10}; Time: {time:.3e}"
+    print_tpl = "Name: {name: <25} Size: {size: >4}; Keys: {keys: >3}; Type: {type: >10}; Time: {time:.2e}; Sigma: {sigma:.0e}"
     str_key = '12323f29-c31f-478c-9b15-e7acc5354df9'
 
     benchmarks = (
@@ -90,18 +112,25 @@ def main():
                     
                     d = dicts[0]
                     
-                    t = autorange(
-                        stmt = benchmark["code"], 
-                        setup = benchmark["setup"], 
-                        globals = {"o": o, "getUuid": getUuid, "d": d, "one_key": one_key},
-                    )
+                    try:
+                        bench_res = autorange(
+                            stmt = benchmark["code"], 
+                            setup = benchmark["setup"], 
+                            globals = {"o": o, "getUuid": getUuid, "d": d, "one_key": one_key},
+                        )
+                    except RuntimeError:
+                        name = benchmark["name"]
+                        msg = f"Sigma too high for benchmark `{name}`"
+                        print(msg, file=sys.stderr)
+                        sys.exit(1)
 
                     print(print_tpl.format(
                         name = "`{}`;".format(benchmark["name"]), 
                         keys = dict_keys, 
                         size = len(d), 
                         type = type(o).__name__, 
-                        time = t, 
+                        time = bench_res[0],
+                        sigma = bench_res[1],  
                     ))
 
 if __name__ == "__main__":
