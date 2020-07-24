@@ -168,6 +168,15 @@ def test_unhashable_value(fd_unhashable):
     with pytest.raises(TypeError):
         hash(fd_unhashable)
 
+@pytest.mark.parametrize("key", ("a", "Sulla", 1))
+@pytest.mark.parametrize("value", ("Marco", 1))
+def test_set(fd, fd_dict, key, value):
+    fd_new = fd.set(key, value)
+    assert fd_new is not fd
+    assert type(fd_new) == frozendict
+    fd_dict[key] = value
+    assert tuple(fd_new.items()) == tuple(fd_dict.items())
+
 ################################################################################
 # immutability tests
 

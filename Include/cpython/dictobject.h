@@ -35,10 +35,9 @@ typedef struct {
     PyObject_HEAD
     
     Py_ssize_t ma_used;
+    uint64_t ma_version_tag;
     PyDictKeysObject* ma_keys;
     PyObject** ma_values;
-    
-    uint64_t ma_version_tag;
     
     Py_hash_t _hash;
     short _hash_calculated;

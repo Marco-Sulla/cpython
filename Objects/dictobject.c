@@ -1449,7 +1449,7 @@ static Py_ssize_t dict_get_min_size(const Py_ssize_t minsize) {
     return newsize;
 }
 
-static int frozendict_resize_empty(PyDictObject* mp, const Py_ssize_t minsize) {
+static int frozendict_resize_empty(PyFrozenDictObject* mp, const Py_ssize_t minsize) {
     /* Find the smallest table size > minused. */
     const Py_ssize_t newsize = dict_get_min_size(minsize);
     
@@ -1469,7 +1469,12 @@ static int frozendict_resize_empty(PyDictObject* mp, const Py_ssize_t minsize) {
     const Py_ssize_t size = USABLE_FRACTION(DK_SIZE(keys));
     PyObject** values = new_values(size);
     
-    for (int i = 0; i < size; i++)
+    if (values == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    
+    for (Py_ssize_t i = 0; i < size; i++)
     {
         values[i] = NULL;
     }
@@ -1479,7 +1484,7 @@ static int frozendict_resize_empty(PyDictObject* mp, const Py_ssize_t minsize) {
     // New table must be large enough.
     assert(keys->dk_usable >= mp->ma_used);
     
-    build_dict_indices(mp, keys);
+    build_dict_indices((PyDictObject*) mp, keys);
     
     return 0;
 }
@@ -1513,8 +1518,7 @@ make_keys_shared(PyObject *op)
         size = USABLE_FRACTION(DK_SIZE(mp->ma_keys));
         values = new_values(size);
         if (values == NULL) {
-            PyErr_SetString(PyExc_MemoryError,
-                "Not enough memory to allocate new values array");
+            PyErr_NoMemory();
             return NULL;
         }
         for (i = 0; i < size; i++) {
@@ -1764,18 +1768,12 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
 }
 
 static int frozendict_setitem(PyObject *op, PyObject *key, PyObject *value, int empty) {
-    PyDictObject *mp;
     Py_hash_t hash;
-    
-    if (! PyDict_Check(op)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
     
     assert(key);
     assert(value);
     
-    mp = (PyDictObject*) op;
+    PyDictObject* mp = (PyDictObject*) op;
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1) {
         hash = PyObject_Hash(key);
@@ -1785,7 +1783,6 @@ static int frozendict_setitem(PyObject *op, PyObject *key, PyObject *value, int 
         }
     }
     
-    /* insertdict() handles any resizing that might be necessary */
     return frozendict_insert(mp, key, hash, value, empty);
 }
 
@@ -3242,6 +3239,62 @@ PyDict_Copy(PyObject *o)
     return NULL;
 }
 
+static PyObject* frozendict_set(PyObject* old_self, PyObject *const *args, Py_ssize_t nargs) {
+    PyTypeObject* type = Py_TYPE(old_self);
+    PyObject* self = type->tp_alloc(type, 0);
+
+    if (self == NULL){
+        return NULL;
+    }
+    
+    if (type == &PyFrozenDict_Type) {
+        _PyObject_GC_UNTRACK(self);
+    }
+    
+    const PyDictObject* old_mp = (PyDictObject*) old_self;
+    const int estimated_size = ESTIMATE_SIZE(old_mp->ma_used + 1);
+    
+    PyFrozenDictObject* mp = (PyFrozenDictObject*) self;
+    
+    if (frozendict_resize_empty(mp, estimated_size)) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    
+    mp->ma_used = 0;
+    mp->_hash = -1;
+    mp->_hash_calculated = 0;
+    
+    if (frozendict_merge(self, old_self, 1)) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    
+    PyDictKeysObject* keys = mp->ma_keys;
+    PyDictKeysObject* old_keys = old_mp->ma_keys;
+    keys->dk_lookup = old_keys->dk_lookup;
+    
+    PyObject* key = args[0];
+    
+    if (frozendict_setitem(self, key, args[1], 0)) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    
+    mp->ma_version_tag = DICT_NEXT_VERSION();
+    
+    if (
+        old_keys->dk_lookup == frozendict_lookup_unicode && 
+        ! PyUnicode_CheckExact(key)
+    ) {
+        keys->dk_lookup = frozendict_lookup;
+    }
+    
+    ASSERT_CONSISTENT(mp);
+
+    return self;
+}
+
 Py_ssize_t
 PyDict_Size(PyObject *mp)
 {
@@ -3839,9 +3892,11 @@ static PyMethodDef frozen_mapp_methods[] = {
     {"values",          dictvalues_new,                 METH_NOARGS,
     values__doc__},
     DICT_FROMKEYS_METHODDEF
-    {"copy",            (PyCFunction)frozendict_copy,         METH_NOARGS,
+    {"copy",            (PyCFunction)frozendict_copy,   METH_NOARGS,
      copy__doc__},
     DICT___REVERSED___METHODDEF
+    {"set",             (PyCFunction)(void(*)(void))frozendict_set, METH_FASTCALL,
+    ""},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -3970,12 +4025,12 @@ static PyObject* frozendict_new(PyTypeObject* type, PyObject* args, PyObject* kw
     
     const int estimated_size = ESTIMATE_SIZE(arg_size + kwds_size);
     
-    if (frozendict_resize_empty((PyDictObject*) self, estimated_size)) {
+    PyFrozenDictObject* mp = (PyFrozenDictObject*) self;
+    
+    if (frozendict_resize_empty(mp, estimated_size)) {
         Py_DECREF(self);
         return NULL;
     }
-    
-    PyFrozenDictObject* mp = (PyFrozenDictObject*) self;
     
     mp->ma_used = 0;
     mp->_hash = -1;
@@ -3990,12 +4045,15 @@ static PyObject* frozendict_new(PyTypeObject* type, PyObject* args, PyObject* kw
     if (mp->ma_used == 0) {
         if (empty_frozendict == NULL) {
             empty_frozendict = self;
+            mp->ma_version_tag = DICT_NEXT_VERSION();
         }
         
         Py_INCREF(empty_frozendict);
 
         return empty_frozendict;
     }
+    
+    mp->ma_version_tag = DICT_NEXT_VERSION();
     
     ASSERT_CONSISTENT(mp);
 
