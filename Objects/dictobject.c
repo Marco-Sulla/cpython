@@ -939,23 +939,24 @@ lookdict_split(PyDictObject *mp, PyObject *key,
     Py_UNREACHABLE();
 }
 
-static Py_ssize_t _Py_HOT_FUNCTION frozendict_lookup(PyDictObject *mp, 
-                                                     PyObject *key,
-                                                     Py_hash_t hash, 
-                                                     PyObject** value_addr) {
+static Py_ssize_t _Py_HOT_FUNCTION 
+frozendict_lookup(PyDictObject *mp, 
+                  PyObject *key,
+                  Py_hash_t hash, 
+                  PyObject** value_addr) {
     /* mp must split table */
     assert(mp->ma_values != NULL);
     
     PyDictKeysObject* dk = mp->ma_keys;
     PyDictKeyEntry* ep0 = DK_ENTRIES(dk);
-    size_t mask = DK_MASK(dk);
+    const size_t mask = DK_MASK(dk);
     size_t perturb = (size_t)hash;
     size_t i = (size_t)hash & mask;
     
     Py_ssize_t ix;
     PyDictKeyEntry* ep;
 
-    for (;;) {
+    while (1) {
         ix = dictkeys_get_index(dk, i);
         assert(ix != DKIX_DUMMY);
         
@@ -991,14 +992,14 @@ frozendict_lookup_unicode(PyDictObject *mp,
     
     PyDictKeysObject* dk = mp->ma_keys;
     PyDictKeyEntry* ep0 = DK_ENTRIES(dk);
-    size_t mask = DK_MASK(dk);
+    const size_t mask = DK_MASK(dk);
     size_t perturb = (size_t)hash;
     size_t i = (size_t)hash & mask;
     
     Py_ssize_t ix;
     PyDictKeyEntry* ep;
 
-    for (;;) {
+    while (1) {
         ix = dictkeys_get_index(dk, i);
         assert(ix != DKIX_DUMMY);
         
@@ -1041,7 +1042,7 @@ _PyDict_HasOnlyStringKeys(PyObject *dict)
 static int dict_has_only_unicode_keys_exact(PyDictObject* mp) {
     PyDictKeyEntry* ep0 = DK_ENTRIES(mp->ma_keys);
     
-    for (Py_ssize_t i = 0, n = mp->ma_keys->dk_nentries; i < n; i++) {
+    for (Py_ssize_t i = 0, n = mp->ma_used; i < n; i++) {
         if (! PyUnicode_CheckExact((&ep0[i])->me_key)) {
             return 0;
         }
@@ -1220,12 +1221,13 @@ static int frozendict_insert(PyDictObject *mp, PyObject *key, Py_hash_t hash,
                              PyObject *value, int empty) {
     Py_ssize_t ix;
     PyObject *old_value;
+    PyDictKeysObject* keys = mp->ma_keys;
     
     Py_INCREF(key);
     Py_INCREF(value);
     
     if (! empty) {
-        ix = mp->ma_keys->dk_lookup(mp, key, hash, &old_value);
+        ix = keys->dk_lookup(mp, key, hash, &old_value);
         
         if (ix == DKIX_ERROR) {
             Py_DECREF(value);
@@ -1237,13 +1239,9 @@ static int frozendict_insert(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     }
     
     if (empty) {
-        PyDictKeysObject* keys = mp->ma_keys;
-        
-        assert(PyUnicode_CheckExact(key) || keys->dk_lookup == lookdict);
-        
         /* Insert into new slot. */
-        Py_ssize_t hashpos = find_empty_slot(keys, hash);
-        Py_ssize_t dk_nentries = keys->dk_nentries;
+        const Py_ssize_t hashpos = find_empty_slot(keys, hash);
+        const Py_ssize_t dk_nentries = keys->dk_nentries;
         PyDictKeyEntry* ep = &DK_ENTRIES(keys)[dk_nentries];
         dictkeys_set_index(keys, hashpos, dk_nentries);
         ep->me_key = key;
@@ -1316,23 +1314,20 @@ static void
 build_indices(PyDictKeysObject *keys, PyDictKeyEntry *ep, Py_ssize_t n)
 {
     size_t mask = (size_t)DK_SIZE(keys) - 1;
+    Py_hash_t hash;
+    size_t i;
+    size_t perturb;
+    
     for (Py_ssize_t ix = 0; ix != n; ix++, ep++) {
-        Py_hash_t hash = ep->me_hash;
-        size_t i = hash & mask;
-        for (size_t perturb = hash; dictkeys_get_index(keys, i) != DKIX_EMPTY;) {
+        hash = ep->me_hash;
+        i = hash & mask;
+        
+        for (perturb = hash; dictkeys_get_index(keys, i) != DKIX_EMPTY;) {
             perturb >>= PERTURB_SHIFT;
             i = mask & (i*5 + perturb + 1);
         }
         dictkeys_set_index(keys, i, ix);
     }
-}
-
-static void build_dict_indices(PyDictObject* mp, PyDictKeysObject* keys) {
-    const Py_ssize_t numentries = mp->ma_used;
-    build_indices(keys, DK_ENTRIES(keys), numentries);
-    keys->dk_usable -= numentries;
-    keys->dk_nentries = numentries;
-    mp->ma_keys = keys;
 }
 
 /*
@@ -1460,13 +1455,14 @@ static int frozendict_resize_empty(PyFrozenDictObject* mp, const Py_ssize_t mins
     
     /* Allocate a new table. */
     PyDictKeysObject* keys = new_keys_object(newsize);
-    keys->dk_lookup = frozendict_lookup;
     
     if (keys == NULL) {
         return -1;
     }
     
-    const Py_ssize_t size = USABLE_FRACTION(DK_SIZE(keys));
+    keys->dk_lookup = frozendict_lookup;
+    
+    const Py_ssize_t size = USABLE_FRACTION(newsize);
     PyObject** values = new_values(size);
     
     if (values == NULL) {
@@ -1474,17 +1470,20 @@ static int frozendict_resize_empty(PyFrozenDictObject* mp, const Py_ssize_t mins
         return -1;
     }
     
-    for (Py_ssize_t i = 0; i < size; i++)
-    {
+    for (Py_ssize_t i = 0; i < size; i++) {
         values[i] = NULL;
     }
     
     mp->ma_values = values;
     
-    // New table must be large enough.
-    assert(keys->dk_usable >= mp->ma_used);
+    const Py_ssize_t numentries = mp->ma_used;
     
-    build_dict_indices((PyDictObject*) mp, keys);
+    // New table must be large enough.
+    assert(keys->dk_usable >= numentries);
+    
+    keys->dk_usable -= numentries;
+    keys->dk_nentries = numentries;
+    mp->ma_keys = keys;
     
     return 0;
 }
@@ -1773,7 +1772,6 @@ static int frozendict_setitem(PyObject *op, PyObject *key, PyObject *value, int 
     assert(key);
     assert(value);
     
-    PyDictObject* mp = (PyDictObject*) op;
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1) {
         hash = PyObject_Hash(key);
@@ -1783,7 +1781,7 @@ static int frozendict_setitem(PyObject *op, PyObject *key, PyObject *value, int 
         }
     }
     
-    return frozendict_insert(mp, key, hash, value, empty);
+    return frozendict_insert((PyDictObject*) op, key, hash, value, empty);
 }
 
 int
@@ -2697,7 +2695,7 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
                     return -1;
                 }
                 
-                // enough? can be skipped if frozendict? can be forced to skip?
+                // enough?
                 if (n != other->ma_keys->dk_nentries) {
                     PyErr_SetString(PyExc_RuntimeError,
                                     "dict mutated during update");
@@ -3239,60 +3237,84 @@ PyDict_Copy(PyObject *o)
     return NULL;
 }
 
-static PyObject* frozendict_set(PyObject* old_self, PyObject *const *args, Py_ssize_t nargs) {
-    PyTypeObject* type = Py_TYPE(old_self);
-    PyObject* self = type->tp_alloc(type, 0);
+static PyObject* frozendict_set(PyObject* self, PyObject *const *args, Py_ssize_t nargs) {
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject* new_op = type->tp_alloc(type, 0);
 
-    if (self == NULL){
+    if (new_op == NULL){
         return NULL;
     }
     
     if (type == &PyFrozenDict_Type) {
-        _PyObject_GC_UNTRACK(self);
+        _PyObject_GC_UNTRACK(new_op);
     }
     
-    const PyDictObject* old_mp = (PyDictObject*) old_self;
-    const int estimated_size = ESTIMATE_SIZE(old_mp->ma_used + 1);
+    const PyDictObject* mp = (PyDictObject*) self;
+    const Py_ssize_t size = mp->ma_used;
     
-    PyFrozenDictObject* mp = (PyFrozenDictObject*) self;
+    PyFrozenDictObject* new_mp = (PyFrozenDictObject*) new_op;
     
-    if (frozendict_resize_empty(mp, estimated_size)) {
-        Py_DECREF(self);
+    if (frozendict_resize_empty(new_mp, ESTIMATE_SIZE(size + 1))) {
+        Py_DECREF(new_op);
         return NULL;
     }
     
-    mp->ma_used = 0;
-    mp->_hash = -1;
-    mp->_hash_calculated = 0;
+    new_mp->ma_used = 0;
+    new_mp->_hash = -1;
+    new_mp->_hash_calculated = 0;
     
-    if (frozendict_merge(self, old_self, 1)) {
-        Py_DECREF(self);
+    PyDictKeysObject* new_keys = new_mp->ma_keys;
+    PyObject** new_values = new_mp->ma_values;
+    
+    const PyDictKeysObject* old_keys = mp->ma_keys;
+    new_keys->dk_lookup = old_keys->dk_lookup;
+    
+    const size_t mask = (size_t)DK_SIZE(old_keys) - 1;
+    PyObject* key;
+    PyObject* value;
+    Py_hash_t hash;
+    PyObject** old_values = mp->ma_values;
+    PyDictKeyEntry* old_entries = DK_ENTRIES(old_keys);
+    PyDictKeyEntry* new_entries = DK_ENTRIES(new_keys);
+    PyDictKeyEntry* old_entry;
+    PyDictKeyEntry* new_entry;
+    
+    for (Py_ssize_t i = 0; i < size; i++) {
+        old_entry = &old_entries[i];
+        hash = old_entry->me_hash;
+        key = old_entry->me_key;
+        value = old_values[i];
+        Py_INCREF(key);
+        Py_INCREF(value);
+        new_entry = &new_entries[i];
+        new_entry->me_key = key;
+        new_entry->me_hash = hash;
+        new_values[i] = value;
+        
+        dictkeys_set_index(new_keys, hash & mask, i);
+    }
+    
+    new_mp->ma_used = size;
+    new_keys->dk_usable -= size;
+    new_keys->dk_nentries = size;
+    
+    PyObject* set_key = args[0];
+    
+    if (frozendict_setitem(new_op, set_key, args[1], 0)) {
+        Py_DECREF(new_op);
         return NULL;
     }
     
-    PyDictKeysObject* keys = mp->ma_keys;
-    PyDictKeysObject* old_keys = old_mp->ma_keys;
-    keys->dk_lookup = old_keys->dk_lookup;
-    
-    PyObject* key = args[0];
-    
-    if (frozendict_setitem(self, key, args[1], 0)) {
-        Py_DECREF(self);
-        return NULL;
-    }
-    
-    mp->ma_version_tag = DICT_NEXT_VERSION();
+    new_mp->ma_version_tag = DICT_NEXT_VERSION();
     
     if (
         old_keys->dk_lookup == frozendict_lookup_unicode && 
-        ! PyUnicode_CheckExact(key)
+        ! PyUnicode_CheckExact(set_key)
     ) {
-        keys->dk_lookup = frozendict_lookup;
+        new_keys->dk_lookup = frozendict_lookup;
     }
-    
-    ASSERT_CONSISTENT(mp);
 
-    return self;
+    return new_op;
 }
 
 Py_ssize_t

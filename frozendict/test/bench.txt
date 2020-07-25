@@ -1,343 +1,243 @@
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o.get(key)`;             Size:    8; Keys: str; Type:       dict; Time: 3.01e-08; Sigma: 1e-10
-Name: `o.get(key)`;             Size:    8; Keys: str; Type: frozendict; Time: 2.98e-08; Sigma: 1e-10
+Name: `for x in o`;             Size:    8; Keys: str; Type:       dict; Time: 9.99e-08; Sigma: 2e-09
+Name: `for x in o`;             Size:    8; Keys: str; Type: frozendict; Time: 9.65e-08; Sigma: 2e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o.get(key)`;             Size:    8; Keys: int; Type:       dict; Time: 3.00e-08; Sigma: 2e-10
-Name: `o.get(key)`;             Size:    8; Keys: int; Type: frozendict; Time: 2.99e-08; Sigma: 3e-10
+Name: `for x in o`;             Size:    8; Keys: int; Type:       dict; Time: 9.99e-08; Sigma: 1e-09
+Name: `for x in o`;             Size:    8; Keys: int; Type: frozendict; Time: 9.65e-08; Sigma: 2e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o.get(key)`;             Size: 1000; Keys: str; Type:       dict; Time: 3.08e-08; Sigma: 1e-10
-Name: `o.get(key)`;             Size: 1000; Keys: str; Type: frozendict; Time: 2.98e-08; Sigma: 1e-10
+Name: `for x in o`;             Size: 1000; Keys: str; Type:       dict; Time: 8.95e-06; Sigma: 4e-08
+Name: `for x in o`;             Size: 1000; Keys: str; Type: frozendict; Time: 8.64e-06; Sigma: 4e-08
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o.get(key)`;             Size: 1000; Keys: int; Type:       dict; Time: 3.03e-08; Sigma: 2e-10
-Name: `o.get(key)`;             Size: 1000; Keys: int; Type: frozendict; Time: 2.99e-08; Sigma: 1e-10
+Name: `for x in o`;             Size: 1000; Keys: int; Type:       dict; Time: 8.77e-06; Sigma: 3e-08
+Name: `for x in o`;             Size: 1000; Keys: int; Type: frozendict; Time: 8.43e-06; Sigma: 3e-08
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o[key]`;                 Size:    8; Keys: str; Type:       dict; Time: 3.90e-08; Sigma: 2e-11
-Name: `o[key]`;                 Size:    8; Keys: str; Type: frozendict; Time: 3.86e-08; Sigma: 3e-11
+Name: `for x in o.keys()`;      Size:    8; Keys: str; Type:       dict; Time: 9.65e-08; Sigma: 1e-09
+Name: `for x in o.keys()`;      Size:    8; Keys: str; Type: frozendict; Time: 9.34e-08; Sigma: 9e-10
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o[key]`;                 Size:    8; Keys: int; Type:       dict; Time: 4.17e-08; Sigma: 4e-11
-Name: `o[key]`;                 Size:    8; Keys: int; Type: frozendict; Time: 4.08e-08; Sigma: 2e-11
+Name: `for x in o.keys()`;      Size:    8; Keys: int; Type:       dict; Time: 9.65e-08; Sigma: 9e-10
+Name: `for x in o.keys()`;      Size:    8; Keys: int; Type: frozendict; Time: 9.34e-08; Sigma: 8e-10
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o[key]`;                 Size: 1000; Keys: str; Type:       dict; Time: 3.97e-08; Sigma: 4e-11
-Name: `o[key]`;                 Size: 1000; Keys: str; Type: frozendict; Time: 3.87e-08; Sigma: 6e-11
+Name: `for x in o.keys()`;      Size: 1000; Keys: str; Type:       dict; Time: 8.84e-06; Sigma: 4e-08
+Name: `for x in o.keys()`;      Size: 1000; Keys: str; Type: frozendict; Time: 8.53e-06; Sigma: 6e-08
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o[key]`;                 Size: 1000; Keys: int; Type:       dict; Time: 4.30e-08; Sigma: 1e-10
-Name: `o[key]`;                 Size: 1000; Keys: int; Type: frozendict; Time: 4.13e-08; Sigma: 5e-11
+Name: `for x in o.keys()`;      Size: 1000; Keys: int; Type:       dict; Time: 8.69e-06; Sigma: 2e-08
+Name: `for x in o.keys()`;      Size: 1000; Keys: int; Type: frozendict; Time: 8.40e-06; Sigma: 2e-08
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `key in o`;               Size:    8; Keys: str; Type:       dict; Time: 2.99e-08; Sigma: 8e-11
-Name: `key in o`;               Size:    8; Keys: str; Type: frozendict; Time: 3.07e-08; Sigma: 2e-10
+Name: `for x in o.values()`;    Size:    8; Keys: str; Type:       dict; Time: 9.89e-08; Sigma: 1e-09
+Name: `for x in o.values()`;    Size:    8; Keys: str; Type: frozendict; Time: 9.11e-08; Sigma: 7e-10
 ////////////////////////////////////////////////////////////////////////////////
-Name: `key in o`;               Size:    8; Keys: int; Type:       dict; Time: 3.08e-08; Sigma: 1e-10
-Name: `key in o`;               Size:    8; Keys: int; Type: frozendict; Time: 2.97e-08; Sigma: 9e-11
+Name: `for x in o.values()`;    Size:    8; Keys: int; Type:       dict; Time: 9.91e-08; Sigma: 9e-10
+Name: `for x in o.values()`;    Size:    8; Keys: int; Type: frozendict; Time: 9.11e-08; Sigma: 7e-10
 ////////////////////////////////////////////////////////////////////////////////
-Name: `key in o`;               Size: 1000; Keys: str; Type:       dict; Time: 3.07e-08; Sigma: 8e-11
-Name: `key in o`;               Size: 1000; Keys: str; Type: frozendict; Time: 3.04e-08; Sigma: 2e-10
+Name: `for x in o.values()`;    Size: 1000; Keys: str; Type:       dict; Time: 9.48e-06; Sigma: 4e-08
+Name: `for x in o.values()`;    Size: 1000; Keys: str; Type: frozendict; Time: 7.95e-06; Sigma: 7e-08
 ////////////////////////////////////////////////////////////////////////////////
-Name: `key in o`;               Size: 1000; Keys: int; Type:       dict; Time: 3.03e-08; Sigma: 8e-11
-Name: `key in o`;               Size: 1000; Keys: int; Type: frozendict; Time: 3.01e-08; Sigma: 1e-10
+Name: `for x in o.values()`;    Size: 1000; Keys: int; Type:       dict; Time: 9.25e-06; Sigma: 3e-08
+Name: `for x in o.values()`;    Size: 1000; Keys: int; Type: frozendict; Time: 7.81e-06; Sigma: 2e-08
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `key not in o`;           Size:    8; Keys: str; Type:       dict; Time: 2.99e-08; Sigma: 8e-11
-Name: `key not in o`;           Size:    8; Keys: str; Type: frozendict; Time: 3.05e-08; Sigma: 2e-10
+Name: `for x in o.items()`;     Size:    8; Keys: str; Type:       dict; Time: 1.95e-07; Sigma: 9e-09
+Name: `for x in o.items()`;     Size:    8; Keys: str; Type: frozendict; Time: 1.83e-07; Sigma: 5e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `key not in o`;           Size:    8; Keys: int; Type:       dict; Time: 2.96e-08; Sigma: 5e-11
-Name: `key not in o`;           Size:    8; Keys: int; Type: frozendict; Time: 2.93e-08; Sigma: 1e-10
+Name: `for x in o.items()`;     Size:    8; Keys: int; Type:       dict; Time: 1.95e-07; Sigma: 8e-09
+Name: `for x in o.items()`;     Size:    8; Keys: int; Type: frozendict; Time: 1.86e-07; Sigma: 5e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `key not in o`;           Size: 1000; Keys: str; Type:       dict; Time: 3.05e-08; Sigma: 1e-10
-Name: `key not in o`;           Size: 1000; Keys: str; Type: frozendict; Time: 3.04e-08; Sigma: 2e-10
+Name: `for x in o.items()`;     Size: 1000; Keys: str; Type:       dict; Time: 1.77e-05; Sigma: 3e-07
+Name: `for x in o.items()`;     Size: 1000; Keys: str; Type: frozendict; Time: 1.73e-05; Sigma: 3e-07
 ////////////////////////////////////////////////////////////////////////////////
-Name: `key not in o`;           Size: 1000; Keys: int; Type:       dict; Time: 3.06e-08; Sigma: 1e-10
-Name: `key not in o`;           Size: 1000; Keys: int; Type: frozendict; Time: 2.98e-08; Sigma: 2e-10
+Name: `for x in o.items()`;     Size: 1000; Keys: int; Type:       dict; Time: 1.77e-05; Sigma: 4e-07
+Name: `for x in o.items()`;     Size: 1000; Keys: int; Type: frozendict; Time: 1.76e-05; Sigma: 3e-07
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `pickle.dumps(o)`;        Size:    8; Keys: str; Type:       dict; Time: 9.48e-07; Sigma: 3e-09
-Name: `pickle.dumps(o)`;        Size:    8; Keys: str; Type: frozendict; Time: 9.29e-07; Sigma: 3e-09
+Name: `for x in iter(o)`;       Size:    8; Keys: str; Type:       dict; Time: 1.20e-07; Sigma: 4e-09
+Name: `for x in iter(o)`;       Size:    8; Keys: str; Type: frozendict; Time: 1.16e-07; Sigma: 5e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `pickle.dumps(o)`;        Size:    8; Keys: int; Type:       dict; Time: 7.51e-07; Sigma: 1e-10
-Name: `pickle.dumps(o)`;        Size:    8; Keys: int; Type: frozendict; Time: 7.08e-07; Sigma: 1e-10
+Name: `for x in iter(o)`;       Size:    8; Keys: int; Type:       dict; Time: 1.20e-07; Sigma: 3e-09
+Name: `for x in iter(o)`;       Size:    8; Keys: int; Type: frozendict; Time: 1.16e-07; Sigma: 5e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `pickle.dumps(o)`;        Size: 1000; Keys: str; Type:       dict; Time: 1.35e-04; Sigma: 4e-08
-Name: `pickle.dumps(o)`;        Size: 1000; Keys: str; Type: frozendict; Time: 1.34e-04; Sigma: 4e-08
+Name: `for x in iter(o)`;       Size: 1000; Keys: str; Type:       dict; Time: 8.99e-06; Sigma: 4e-08
+Name: `for x in iter(o)`;       Size: 1000; Keys: str; Type: frozendict; Time: 8.66e-06; Sigma: 4e-08
 ////////////////////////////////////////////////////////////////////////////////
-Name: `pickle.dumps(o)`;        Size: 1000; Keys: int; Type:       dict; Time: 7.08e-05; Sigma: 3e-08
-Name: `pickle.dumps(o)`;        Size: 1000; Keys: int; Type: frozendict; Time: 6.80e-05; Sigma: 1e-08
+Name: `for x in iter(o)`;       Size: 1000; Keys: int; Type:       dict; Time: 8.76e-06; Sigma: 3e-08
+Name: `for x in iter(o)`;       Size: 1000; Keys: int; Type: frozendict; Time: 8.45e-06; Sigma: 3e-08
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `pickle.loads(dump)`;     Size:    8; Keys: str; Type:       dict; Time: 1.47e-06; Sigma: 6e-09
-Name: `pickle.loads(dump)`;     Size:    8; Keys: str; Type: frozendict; Time: 1.74e-06; Sigma: 1e-08
+Name: `constructor(d)`;         Size:    8; Keys: str; Type:       dict; Time: 2.81e-07; Sigma: 2e-09
+Name: `constructor(d)`;         Size:    8; Keys: str; Type: frozendict; Time: 2.08e-07; Sigma: 3e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `pickle.loads(dump)`;     Size:    8; Keys: int; Type:       dict; Time: 9.34e-07; Sigma: 5e-10
-Name: `pickle.loads(dump)`;     Size:    8; Keys: int; Type: frozendict; Time: 1.20e-06; Sigma: 6e-10
+Name: `constructor(d)`;         Size:    8; Keys: int; Type:       dict; Time: 2.80e-07; Sigma: 2e-09
+Name: `constructor(d)`;         Size:    8; Keys: int; Type: frozendict; Time: 2.02e-07; Sigma: 2e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `pickle.loads(dump)`;     Size: 1000; Keys: str; Type:       dict; Time: 1.60e-04; Sigma: 7e-08
-Name: `pickle.loads(dump)`;     Size: 1000; Keys: str; Type: frozendict; Time: 1.67e-04; Sigma: 9e-08
+Name: `constructor(d)`;         Size: 1000; Keys: str; Type:       dict; Time: 2.31e-05; Sigma: 7e-07
+Name: `constructor(d)`;         Size: 1000; Keys: str; Type: frozendict; Time: 1.55e-05; Sigma: 1e-06
 ////////////////////////////////////////////////////////////////////////////////
-Name: `pickle.loads(dump)`;     Size: 1000; Keys: int; Type:       dict; Time: 9.17e-05; Sigma: 3e-08
-Name: `pickle.loads(dump)`;     Size: 1000; Keys: int; Type: frozendict; Time: 9.81e-05; Sigma: 2e-07
+Name: `constructor(d)`;         Size: 1000; Keys: int; Type:       dict; Time: 1.75e-05; Sigma: 3e-07
+Name: `constructor(d)`;         Size: 1000; Keys: int; Type: frozendict; Time: 1.22e-05; Sigma: 2e-07
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `hash(o)`;                Size:    8; Keys: str; Type: frozendict; Time: 6.13e-08; Sigma: 1e-10
+Name: `constructor(d.items())`; Size:    8; Keys: str; Type:       dict; Time: 3.68e-07; Sigma: 2e-09
+Name: `constructor(d.items())`; Size:    8; Keys: str; Type: frozendict; Time: 3.10e-07; Sigma: 3e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `hash(o)`;                Size:    8; Keys: int; Type: frozendict; Time: 6.23e-08; Sigma: 1e-10
+Name: `constructor(d.items())`; Size:    8; Keys: int; Type:       dict; Time: 3.87e-07; Sigma: 2e-09
+Name: `constructor(d.items())`; Size:    8; Keys: int; Type: frozendict; Time: 3.16e-07; Sigma: 2e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `hash(o)`;                Size: 1000; Keys: str; Type: frozendict; Time: 6.23e-08; Sigma: 8e-11
+Name: `constructor(d.items())`; Size: 1000; Keys: str; Type:       dict; Time: 4.18e-05; Sigma: 1e-06
+Name: `constructor(d.items())`; Size: 1000; Keys: str; Type: frozendict; Time: 2.42e-05; Sigma: 3e-07
 ////////////////////////////////////////////////////////////////////////////////
-Name: `hash(o)`;                Size: 1000; Keys: int; Type: frozendict; Time: 6.19e-08; Sigma: 1e-10
+Name: `constructor(d.items())`; Size: 1000; Keys: int; Type:       dict; Time: 2.96e-05; Sigma: 5e-07
+Name: `constructor(d.items())`; Size: 1000; Keys: int; Type: frozendict; Time: 1.95e-05; Sigma: 2e-07
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `len(o)`;                 Size:    8; Keys: str; Type:       dict; Time: 5.08e-08; Sigma: 8e-11
-Name: `len(o)`;                 Size:    8; Keys: str; Type: frozendict; Time: 5.07e-08; Sigma: 8e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `len(o)`;                 Size:    8; Keys: int; Type:       dict; Time: 5.07e-08; Sigma: 1e-10
-Name: `len(o)`;                 Size:    8; Keys: int; Type: frozendict; Time: 5.07e-08; Sigma: 7e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `len(o)`;                 Size: 1000; Keys: str; Type:       dict; Time: 6.01e-08; Sigma: 1e-10
-Name: `len(o)`;                 Size: 1000; Keys: str; Type: frozendict; Time: 6.12e-08; Sigma: 9e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `len(o)`;                 Size: 1000; Keys: int; Type:       dict; Time: 6.00e-08; Sigma: 7e-11
-Name: `len(o)`;                 Size: 1000; Keys: int; Type: frozendict; Time: 6.09e-08; Sigma: 1e-10
-################################################################################
-////////////////////////////////////////////////////////////////////////////////
-Name: `o.keys()`;               Size:    8; Keys: str; Type:       dict; Time: 3.46e-08; Sigma: 1e-10
-Name: `o.keys()`;               Size:    8; Keys: str; Type: frozendict; Time: 3.46e-08; Sigma: 6e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `o.keys()`;               Size:    8; Keys: int; Type:       dict; Time: 3.46e-08; Sigma: 7e-11
-Name: `o.keys()`;               Size:    8; Keys: int; Type: frozendict; Time: 3.46e-08; Sigma: 8e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `o.keys()`;               Size: 1000; Keys: str; Type:       dict; Time: 3.45e-08; Sigma: 7e-11
-Name: `o.keys()`;               Size: 1000; Keys: str; Type: frozendict; Time: 3.45e-08; Sigma: 8e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `o.keys()`;               Size: 1000; Keys: int; Type:       dict; Time: 3.45e-08; Sigma: 9e-11
-Name: `o.keys()`;               Size: 1000; Keys: int; Type: frozendict; Time: 3.46e-08; Sigma: 1e-10
-################################################################################
-////////////////////////////////////////////////////////////////////////////////
-Name: `o.values()`;             Size:    8; Keys: str; Type:       dict; Time: 3.48e-08; Sigma: 7e-11
-Name: `o.values()`;             Size:    8; Keys: str; Type: frozendict; Time: 3.47e-08; Sigma: 7e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `o.values()`;             Size:    8; Keys: int; Type:       dict; Time: 3.48e-08; Sigma: 7e-11
-Name: `o.values()`;             Size:    8; Keys: int; Type: frozendict; Time: 3.48e-08; Sigma: 1e-10
-////////////////////////////////////////////////////////////////////////////////
-Name: `o.values()`;             Size: 1000; Keys: str; Type:       dict; Time: 3.47e-08; Sigma: 1e-10
-Name: `o.values()`;             Size: 1000; Keys: str; Type: frozendict; Time: 3.48e-08; Sigma: 5e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `o.values()`;             Size: 1000; Keys: int; Type:       dict; Time: 3.47e-08; Sigma: 4e-11
-Name: `o.values()`;             Size: 1000; Keys: int; Type: frozendict; Time: 3.47e-08; Sigma: 9e-11
-################################################################################
-////////////////////////////////////////////////////////////////////////////////
-Name: `o.items()`;              Size:    8; Keys: str; Type:       dict; Time: 3.45e-08; Sigma: 1e-10
-Name: `o.items()`;              Size:    8; Keys: str; Type: frozendict; Time: 3.45e-08; Sigma: 9e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `o.items()`;              Size:    8; Keys: int; Type:       dict; Time: 3.44e-08; Sigma: 1e-10
-Name: `o.items()`;              Size:    8; Keys: int; Type: frozendict; Time: 3.45e-08; Sigma: 7e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `o.items()`;              Size: 1000; Keys: str; Type:       dict; Time: 3.44e-08; Sigma: 8e-11
-Name: `o.items()`;              Size: 1000; Keys: str; Type: frozendict; Time: 3.43e-08; Sigma: 7e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `o.items()`;              Size: 1000; Keys: int; Type:       dict; Time: 3.45e-08; Sigma: 5e-11
-Name: `o.items()`;              Size: 1000; Keys: int; Type: frozendict; Time: 3.45e-08; Sigma: 4e-11
-################################################################################
-////////////////////////////////////////////////////////////////////////////////
-Name: `iter(o)`;                Size:    8; Keys: str; Type:       dict; Time: 6.56e-08; Sigma: 1e-10
-Name: `iter(o)`;                Size:    8; Keys: str; Type: frozendict; Time: 6.66e-08; Sigma: 6e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `iter(o)`;                Size:    8; Keys: int; Type:       dict; Time: 6.57e-08; Sigma: 1e-10
-Name: `iter(o)`;                Size:    8; Keys: int; Type: frozendict; Time: 6.64e-08; Sigma: 9e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `iter(o)`;                Size: 1000; Keys: str; Type:       dict; Time: 6.66e-08; Sigma: 5e-11
-Name: `iter(o)`;                Size: 1000; Keys: str; Type: frozendict; Time: 6.63e-08; Sigma: 1e-10
-////////////////////////////////////////////////////////////////////////////////
-Name: `iter(o)`;                Size: 1000; Keys: int; Type:       dict; Time: 6.65e-08; Sigma: 7e-11
-Name: `iter(o)`;                Size: 1000; Keys: int; Type: frozendict; Time: 6.66e-08; Sigma: 8e-11
-################################################################################
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o`;             Size:    8; Keys: str; Type:       dict; Time: 1.08e-07; Sigma: 2e-10
-Name: `for x in o`;             Size:    8; Keys: str; Type: frozendict; Time: 1.05e-07; Sigma: 2e-10
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o`;             Size:    8; Keys: int; Type:       dict; Time: 1.08e-07; Sigma: 2e-10
-Name: `for x in o`;             Size:    8; Keys: int; Type: frozendict; Time: 1.05e-07; Sigma: 2e-10
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o`;             Size: 1000; Keys: str; Type:       dict; Time: 8.96e-06; Sigma: 4e-09
-Name: `for x in o`;             Size: 1000; Keys: str; Type: frozendict; Time: 8.64e-06; Sigma: 3e-09
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o`;             Size: 1000; Keys: int; Type:       dict; Time: 8.67e-06; Sigma: 7e-10
-Name: `for x in o`;             Size: 1000; Keys: int; Type: frozendict; Time: 8.41e-06; Sigma: 4e-10
-################################################################################
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o.keys()`;      Size:    8; Keys: str; Type:       dict; Time: 9.78e-08; Sigma: 9e-11
-Name: `for x in o.keys()`;      Size:    8; Keys: str; Type: frozendict; Time: 9.49e-08; Sigma: 7e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o.keys()`;      Size:    8; Keys: int; Type:       dict; Time: 9.79e-08; Sigma: 1e-10
-Name: `for x in o.keys()`;      Size:    8; Keys: int; Type: frozendict; Time: 9.49e-08; Sigma: 9e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o.keys()`;      Size: 1000; Keys: str; Type:       dict; Time: 8.92e-06; Sigma: 3e-09
-Name: `for x in o.keys()`;      Size: 1000; Keys: str; Type: frozendict; Time: 8.61e-06; Sigma: 3e-09
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o.keys()`;      Size: 1000; Keys: int; Type:       dict; Time: 8.65e-06; Sigma: 1e-10
-Name: `for x in o.keys()`;      Size: 1000; Keys: int; Type: frozendict; Time: 8.35e-06; Sigma: 3e-10
-################################################################################
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o.values()`;    Size:    8; Keys: str; Type:       dict; Time: 1.02e-07; Sigma: 1e-10
-Name: `for x in o.values()`;    Size:    8; Keys: str; Type: frozendict; Time: 9.23e-08; Sigma: 6e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o.values()`;    Size:    8; Keys: int; Type:       dict; Time: 1.02e-07; Sigma: 7e-11
-Name: `for x in o.values()`;    Size:    8; Keys: int; Type: frozendict; Time: 9.21e-08; Sigma: 7e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o.values()`;    Size: 1000; Keys: str; Type:       dict; Time: 9.48e-06; Sigma: 8e-10
-Name: `for x in o.values()`;    Size: 1000; Keys: str; Type: frozendict; Time: 7.96e-06; Sigma: 2e-09
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o.values()`;    Size: 1000; Keys: int; Type:       dict; Time: 9.48e-06; Sigma: 2e-09
-Name: `for x in o.values()`;    Size: 1000; Keys: int; Type: frozendict; Time: 7.95e-06; Sigma: 5e-09
-################################################################################
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o.items()`;     Size:    8; Keys: str; Type:       dict; Time: 2.00e-07; Sigma: 8e-10
-Name: `for x in o.items()`;     Size:    8; Keys: str; Type: frozendict; Time: 1.87e-07; Sigma: 3e-10
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o.items()`;     Size:    8; Keys: int; Type:       dict; Time: 1.99e-07; Sigma: 3e-10
-Name: `for x in o.items()`;     Size:    8; Keys: int; Type: frozendict; Time: 1.93e-07; Sigma: 2e-10
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o.items()`;     Size: 1000; Keys: str; Type:       dict; Time: 1.78e-05; Sigma: 3e-08
-Name: `for x in o.items()`;     Size: 1000; Keys: str; Type: frozendict; Time: 1.74e-05; Sigma: 3e-08
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in o.items()`;     Size: 1000; Keys: int; Type:       dict; Time: 1.79e-05; Sigma: 2e-08
-Name: `for x in o.items()`;     Size: 1000; Keys: int; Type: frozendict; Time: 1.74e-05; Sigma: 2e-08
-################################################################################
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in iter(o)`;       Size:    8; Keys: str; Type:       dict; Time: 1.43e-07; Sigma: 2e-10
-Name: `for x in iter(o)`;       Size:    8; Keys: str; Type: frozendict; Time: 1.41e-07; Sigma: 2e-10
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in iter(o)`;       Size:    8; Keys: int; Type:       dict; Time: 1.43e-07; Sigma: 2e-10
-Name: `for x in iter(o)`;       Size:    8; Keys: int; Type: frozendict; Time: 1.39e-07; Sigma: 3e-10
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in iter(o)`;       Size: 1000; Keys: str; Type:       dict; Time: 9.03e-06; Sigma: 8e-09
-Name: `for x in iter(o)`;       Size: 1000; Keys: str; Type: frozendict; Time: 8.71e-06; Sigma: 2e-09
-////////////////////////////////////////////////////////////////////////////////
-Name: `for x in iter(o)`;       Size: 1000; Keys: int; Type:       dict; Time: 8.74e-06; Sigma: 6e-09
-Name: `for x in iter(o)`;       Size: 1000; Keys: int; Type: frozendict; Time: 8.44e-06; Sigma: 4e-09
-################################################################################
-////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(d)`;         Size:    8; Keys: str; Type:       dict; Time: 2.89e-07; Sigma: 7e-11
-Name: `constructor(d)`;         Size:    8; Keys: str; Type: frozendict; Time: 2.24e-07; Sigma: 1e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(d)`;         Size:    8; Keys: int; Type:       dict; Time: 2.90e-07; Sigma: 4e-11
-Name: `constructor(d)`;         Size:    8; Keys: int; Type: frozendict; Time: 2.20e-07; Sigma: 1e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(d)`;         Size: 1000; Keys: str; Type:       dict; Time: 2.41e-05; Sigma: 4e-08
-Name: `constructor(d)`;         Size: 1000; Keys: str; Type: frozendict; Time: 1.62e-05; Sigma: 4e-09
-////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(d)`;         Size: 1000; Keys: int; Type:       dict; Time: 1.90e-05; Sigma: 3e-08
-Name: `constructor(d)`;         Size: 1000; Keys: int; Type: frozendict; Time: 1.36e-05; Sigma: 3e-09
-################################################################################
-////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(d.items())`; Size:    8; Keys: str; Type:       dict; Time: 3.83e-07; Sigma: 3e-11
-Name: `constructor(d.items())`; Size:    8; Keys: str; Type: frozendict; Time: 3.08e-07; Sigma: 3e-10
-////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(d.items())`; Size:    8; Keys: int; Type:       dict; Time: 4.01e-07; Sigma: 4e-11
-Name: `constructor(d.items())`; Size:    8; Keys: int; Type: frozendict; Time: 3.14e-07; Sigma: 8e-11
-////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(d.items())`; Size: 1000; Keys: str; Type:       dict; Time: 4.48e-05; Sigma: 9e-09
-Name: `constructor(d.items())`; Size: 1000; Keys: str; Type: frozendict; Time: 2.39e-05; Sigma: 1e-08
-////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(d.items())`; Size: 1000; Keys: int; Type:       dict; Time: 3.44e-05; Sigma: 2e-08
-Name: `constructor(d.items())`; Size: 1000; Keys: int; Type: frozendict; Time: 2.04e-05; Sigma: 4e-09
-################################################################################
-////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(**d)`;       Size:    8; Keys: str; Type:       dict; Time: 2.67e-07; Sigma: 5e-11
-Name: `constructor(**d)`;       Size:    8; Keys: str; Type: frozendict; Time: 2.03e-07; Sigma: 4e-11
+Name: `constructor(**d)`;       Size:    8; Keys: str; Type:       dict; Time: 2.60e-07; Sigma: 6e-09
+Name: `constructor(**d)`;       Size:    8; Keys: str; Type: frozendict; Time: 1.84e-07; Sigma: 6e-09
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(**d)`;       Size: 1000; Keys: str; Type:       dict; Time: 2.40e-05; Sigma: 2e-08
-Name: `constructor(**d)`;       Size: 1000; Keys: str; Type: frozendict; Time: 1.62e-05; Sigma: 6e-09
+Name: `constructor(**d)`;       Size: 1000; Keys: str; Type:       dict; Time: 2.30e-05; Sigma: 7e-07
+Name: `constructor(**d)`;       Size: 1000; Keys: str; Type: frozendict; Time: 1.59e-05; Sigma: 3e-07
 ////////////////////////////////////////////////////////////////////////////////
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(o)`;         Size:    8; Keys: str; Type:       dict; Time: 2.89e-07; Sigma: 3e-11
-Name: `constructor(o)`;         Size:    8; Keys: str; Type: frozendict; Time: 6.31e-08; Sigma: 7e-11
+Name: `constructor(o)`;         Size:    8; Keys: str; Type:       dict; Time: 2.81e-07; Sigma: 2e-09
+Name: `constructor(o)`;         Size:    8; Keys: str; Type: frozendict; Time: 5.28e-08; Sigma: 2e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(o)`;         Size:    8; Keys: int; Type:       dict; Time: 2.90e-07; Sigma: 2e-11
-Name: `constructor(o)`;         Size:    8; Keys: int; Type: frozendict; Time: 6.31e-08; Sigma: 1e-10
+Name: `constructor(o)`;         Size:    8; Keys: int; Type:       dict; Time: 2.81e-07; Sigma: 2e-09
+Name: `constructor(o)`;         Size:    8; Keys: int; Type: frozendict; Time: 5.31e-08; Sigma: 2e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(o)`;         Size: 1000; Keys: str; Type:       dict; Time: 2.40e-05; Sigma: 2e-08
-Name: `constructor(o)`;         Size: 1000; Keys: str; Type: frozendict; Time: 6.31e-08; Sigma: 8e-11
+Name: `constructor(o)`;         Size: 1000; Keys: str; Type:       dict; Time: 2.30e-05; Sigma: 7e-07
+Name: `constructor(o)`;         Size: 1000; Keys: str; Type: frozendict; Time: 5.19e-08; Sigma: 3e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `constructor(o)`;         Size: 1000; Keys: int; Type:       dict; Time: 1.89e-05; Sigma: 1e-08
-Name: `constructor(o)`;         Size: 1000; Keys: int; Type: frozendict; Time: 6.31e-08; Sigma: 1e-10
+Name: `constructor(o)`;         Size: 1000; Keys: int; Type:       dict; Time: 1.75e-05; Sigma: 1e-07
+Name: `constructor(o)`;         Size: 1000; Keys: int; Type: frozendict; Time: 5.35e-08; Sigma: 2e-09
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o.copy()`;               Size:    8; Keys: str; Type:       dict; Time: 9.33e-08; Sigma: 3e-11
-Name: `o.copy()`;               Size:    8; Keys: str; Type: frozendict; Time: 4.28e-08; Sigma: 1e-10
+Name: `o.copy()`;               Size:    8; Keys: str; Type:       dict; Time: 8.21e-08; Sigma: 1e-08
+Name: `o.copy()`;               Size:    8; Keys: str; Type: frozendict; Time: 3.84e-08; Sigma: 2e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o.copy()`;               Size:    8; Keys: int; Type:       dict; Time: 9.26e-08; Sigma: 4e-11
-Name: `o.copy()`;               Size:    8; Keys: int; Type: frozendict; Time: 4.28e-08; Sigma: 1e-10
+Name: `o.copy()`;               Size:    8; Keys: int; Type:       dict; Time: 8.17e-08; Sigma: 4e-09
+Name: `o.copy()`;               Size:    8; Keys: int; Type: frozendict; Time: 3.75e-08; Sigma: 2e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o.copy()`;               Size: 1000; Keys: str; Type:       dict; Time: 7.02e-06; Sigma: 2e-09
-Name: `o.copy()`;               Size: 1000; Keys: str; Type: frozendict; Time: 4.27e-08; Sigma: 1e-10
+Name: `o.copy()`;               Size: 1000; Keys: str; Type:       dict; Time: 6.54e-06; Sigma: 3e-07
+Name: `o.copy()`;               Size: 1000; Keys: str; Type: frozendict; Time: 3.64e-08; Sigma: 2e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o.copy()`;               Size: 1000; Keys: int; Type:       dict; Time: 5.61e-06; Sigma: 3e-09
-Name: `o.copy()`;               Size: 1000; Keys: int; Type: frozendict; Time: 4.28e-08; Sigma: 1e-10
+Name: `o.copy()`;               Size: 1000; Keys: int; Type:       dict; Time: 3.42e-06; Sigma: 3e-07
+Name: `o.copy()`;               Size: 1000; Keys: int; Type: frozendict; Time: 3.76e-08; Sigma: 2e-09
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o == d`;                 Size:    8; Keys: str; Type:       dict; Time: 1.03e-07; Sigma: 9e-11
-Name: `o == d`;                 Size:    8; Keys: str; Type: frozendict; Time: 1.02e-07; Sigma: 1e-10
+Name: `o == d`;                 Size:    8; Keys: str; Type:       dict; Time: 9.23e-08; Sigma: 2e-09
+Name: `o == d`;                 Size:    8; Keys: str; Type: frozendict; Time: 9.03e-08; Sigma: 2e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o == d`;                 Size:    8; Keys: int; Type:       dict; Time: 1.22e-07; Sigma: 5e-11
-Name: `o == d`;                 Size:    8; Keys: int; Type: frozendict; Time: 1.30e-07; Sigma: 5e-10
+Name: `o == d`;                 Size:    8; Keys: int; Type:       dict; Time: 9.73e-08; Sigma: 2e-09
+Name: `o == d`;                 Size:    8; Keys: int; Type: frozendict; Time: 9.96e-08; Sigma: 3e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o == d`;                 Size: 1000; Keys: str; Type:       dict; Time: 1.32e-05; Sigma: 5e-09
-Name: `o == d`;                 Size: 1000; Keys: str; Type: frozendict; Time: 1.33e-05; Sigma: 8e-09
+Name: `o == d`;                 Size: 1000; Keys: str; Type:       dict; Time: 1.33e-05; Sigma: 1e-07
+Name: `o == d`;                 Size: 1000; Keys: str; Type: frozendict; Time: 1.31e-05; Sigma: 1e-07
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o == d`;                 Size: 1000; Keys: int; Type:       dict; Time: 9.98e-06; Sigma: 2e-09
-Name: `o == d`;                 Size: 1000; Keys: int; Type: frozendict; Time: 1.04e-05; Sigma: 3e-07
+Name: `o == d`;                 Size: 1000; Keys: int; Type:       dict; Time: 9.85e-06; Sigma: 3e-08
+Name: `o == d`;                 Size: 1000; Keys: int; Type: frozendict; Time: 9.54e-06; Sigma: 6e-08
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o == o`;                 Size:    8; Keys: str; Type:       dict; Time: 1.09e-07; Sigma: 3e-10
-Name: `o == o`;                 Size:    8; Keys: str; Type: frozendict; Time: 3.86e-08; Sigma: 5e-11
+Name: `o == o`;                 Size:    8; Keys: str; Type:       dict; Time: 9.28e-08; Sigma: 1e-09
+Name: `o == o`;                 Size:    8; Keys: str; Type: frozendict; Time: 2.46e-08; Sigma: 1e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o == o`;                 Size:    8; Keys: int; Type:       dict; Time: 1.23e-07; Sigma: 7e-11
-Name: `o == o`;                 Size:    8; Keys: int; Type: frozendict; Time: 3.86e-08; Sigma: 4e-11
+Name: `o == o`;                 Size:    8; Keys: int; Type:       dict; Time: 9.78e-08; Sigma: 1e-09
+Name: `o == o`;                 Size:    8; Keys: int; Type: frozendict; Time: 2.46e-08; Sigma: 1e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o == o`;                 Size: 1000; Keys: str; Type:       dict; Time: 1.33e-05; Sigma: 8e-09
-Name: `o == o`;                 Size: 1000; Keys: str; Type: frozendict; Time: 3.86e-08; Sigma: 4e-11
+Name: `o == o`;                 Size: 1000; Keys: str; Type:       dict; Time: 1.33e-05; Sigma: 1e-07
+Name: `o == o`;                 Size: 1000; Keys: str; Type: frozendict; Time: 2.46e-08; Sigma: 1e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `o == o`;                 Size: 1000; Keys: int; Type:       dict; Time: 1.02e-05; Sigma: 2e-08
-Name: `o == o`;                 Size: 1000; Keys: int; Type: frozendict; Time: 3.89e-08; Sigma: 2e-10
+Name: `o == o`;                 Size: 1000; Keys: int; Type:       dict; Time: 9.86e-06; Sigma: 4e-08
+Name: `o == o`;                 Size: 1000; Keys: int; Type: frozendict; Time: 2.46e-08; Sigma: 1e-09
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `class.fromkeys()`;       Size:    8; Keys: str; Type:       dict; Time: 3.50e-07; Sigma: 2e-09
-Name: `class.fromkeys()`;       Size:    8; Keys: str; Type: frozendict; Time: 3.74e-07; Sigma: 2e-10
+Name: `o.get(key)`;             Size:    8; Keys: str; Type:       dict; Time: 2.84e-08; Sigma: 4e-09
+Name: `o.get(key)`;             Size:    8; Keys: str; Type: frozendict; Time: 2.84e-08; Sigma: 3e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `class.fromkeys()`;       Size:    8; Keys: int; Type:       dict; Time: 3.57e-07; Sigma: 5e-11
-Name: `class.fromkeys()`;       Size:    8; Keys: int; Type: frozendict; Time: 3.88e-07; Sigma: 3e-09
+Name: `o.get(key)`;             Size:    8; Keys: int; Type:       dict; Time: 2.84e-08; Sigma: 4e-09
+Name: `o.get(key)`;             Size:    8; Keys: int; Type: frozendict; Time: 2.81e-08; Sigma: 6e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `class.fromkeys()`;       Size: 1000; Keys: str; Type:       dict; Time: 4.04e-05; Sigma: 3e-08
-Name: `class.fromkeys()`;       Size: 1000; Keys: str; Type: frozendict; Time: 2.32e-05; Sigma: 1e-08
+Name: `o.get(key)`;             Size: 1000; Keys: str; Type:       dict; Time: 2.89e-08; Sigma: 3e-09
+Name: `o.get(key)`;             Size: 1000; Keys: str; Type: frozendict; Time: 2.81e-08; Sigma: 3e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `class.fromkeys()`;       Size: 1000; Keys: int; Type:       dict; Time: 2.86e-05; Sigma: 1e-08
-Name: `class.fromkeys()`;       Size: 1000; Keys: int; Type: frozendict; Time: 2.59e-05; Sigma: 2e-08
+Name: `o.get(key)`;             Size: 1000; Keys: int; Type:       dict; Time: 2.84e-08; Sigma: 3e-09
+Name: `o.get(key)`;             Size: 1000; Keys: int; Type: frozendict; Time: 2.87e-08; Sigma: 3e-09
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `repr(o)`;                Size:    8; Keys: str; Type:       dict; Time: 2.72e-06; Sigma: 7e-10
-Name: `repr(o)`;                Size:    8; Keys: str; Type: frozendict; Time: 3.07e-06; Sigma: 2e-09
+Name: `o[key]`;                 Size:    8; Keys: str; Type:       dict; Time: 2.61e-08; Sigma: 9e-10
+Name: `o[key]`;                 Size:    8; Keys: str; Type: frozendict; Time: 2.62e-08; Sigma: 5e-10
 ////////////////////////////////////////////////////////////////////////////////
-Name: `repr(o)`;                Size:    8; Keys: int; Type:       dict; Time: 1.92e-06; Sigma: 4e-09
-Name: `repr(o)`;                Size:    8; Keys: int; Type: frozendict; Time: 2.18e-06; Sigma: 6e-09
+Name: `o[key]`;                 Size:    8; Keys: int; Type:       dict; Time: 2.92e-08; Sigma: 7e-10
+Name: `o[key]`;                 Size:    8; Keys: int; Type: frozendict; Time: 2.82e-08; Sigma: 7e-10
 ////////////////////////////////////////////////////////////////////////////////
-Name: `repr(o)`;                Size: 1000; Keys: str; Type:       dict; Time: 2.55e-04; Sigma: 6e-08
-Name: `repr(o)`;                Size: 1000; Keys: str; Type: frozendict; Time: 2.83e-04; Sigma: 6e-08
+Name: `o[key]`;                 Size: 1000; Keys: str; Type:       dict; Time: 4.38e-08; Sigma: 1e-09
+Name: `o[key]`;                 Size: 1000; Keys: str; Type: frozendict; Time: 3.82e-08; Sigma: 1e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `repr(o)`;                Size: 1000; Keys: int; Type:       dict; Time: 2.00e-04; Sigma: 5e-07
-Name: `repr(o)`;                Size: 1000; Keys: int; Type: frozendict; Time: 2.15e-04; Sigma: 6e-07
+Name: `o[key]`;                 Size: 1000; Keys: int; Type:       dict; Time: 2.99e-08; Sigma: 7e-10
+Name: `o[key]`;                 Size: 1000; Keys: int; Type: frozendict; Time: 2.92e-08; Sigma: 7e-10
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
-Name: `str(o)`;                 Size:    8; Keys: str; Type:       dict; Time: 2.77e-06; Sigma: 1e-09
-Name: `str(o)`;                 Size:    8; Keys: str; Type: frozendict; Time: 3.12e-06; Sigma: 1e-09
+Name: `key in o`;               Size:    8; Keys: str; Type:       dict; Time: 2.33e-08; Sigma: 4e-09
+Name: `key in o`;               Size:    8; Keys: str; Type: frozendict; Time: 2.29e-08; Sigma: 3e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `str(o)`;                 Size:    8; Keys: int; Type:       dict; Time: 1.98e-06; Sigma: 5e-09
-Name: `str(o)`;                 Size:    8; Keys: int; Type: frozendict; Time: 2.23e-06; Sigma: 7e-09
+Name: `key in o`;               Size:    8; Keys: int; Type:       dict; Time: 2.32e-08; Sigma: 3e-09
+Name: `key in o`;               Size:    8; Keys: int; Type: frozendict; Time: 2.30e-08; Sigma: 3e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `str(o)`;                 Size: 1000; Keys: str; Type:       dict; Time: 2.55e-04; Sigma: 8e-08
-Name: `str(o)`;                 Size: 1000; Keys: str; Type: frozendict; Time: 2.83e-04; Sigma: 5e-08
+Name: `key in o`;               Size: 1000; Keys: str; Type:       dict; Time: 2.41e-08; Sigma: 3e-09
+Name: `key in o`;               Size: 1000; Keys: str; Type: frozendict; Time: 2.29e-08; Sigma: 2e-09
 ////////////////////////////////////////////////////////////////////////////////
-Name: `str(o)`;                 Size: 1000; Keys: int; Type:       dict; Time: 2.00e-04; Sigma: 4e-07
-Name: `str(o)`;                 Size: 1000; Keys: int; Type: frozendict; Time: 2.16e-04; Sigma: 5e-07
+Name: `key in o`;               Size: 1000; Keys: int; Type:       dict; Time: 2.38e-08; Sigma: 3e-09
+Name: `key in o`;               Size: 1000; Keys: int; Type: frozendict; Time: 2.38e-08; Sigma: 3e-09
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.dumps(o)`;        Size:    8; Keys: str; Type:       dict; Time: 8.97e-07; Sigma: 2e-08
+Name: `pickle.dumps(o)`;        Size:    8; Keys: str; Type: frozendict; Time: 8.76e-07; Sigma: 2e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.dumps(o)`;        Size:    8; Keys: int; Type:       dict; Time: 5.77e-07; Sigma: 3e-08
+Name: `pickle.dumps(o)`;        Size:    8; Keys: int; Type: frozendict; Time: 5.44e-07; Sigma: 3e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.dumps(o)`;        Size: 1000; Keys: str; Type:       dict; Time: 2.02e-04; Sigma: 4e-06
+Name: `pickle.dumps(o)`;        Size: 1000; Keys: str; Type: frozendict; Time: 2.00e-04; Sigma: 3e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.dumps(o)`;        Size: 1000; Keys: int; Type:       dict; Time: 3.22e-05; Sigma: 3e-07
+Name: `pickle.dumps(o)`;        Size: 1000; Keys: int; Type: frozendict; Time: 3.01e-05; Sigma: 7e-07
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `class.fromkeys()`;       Size:    8; Keys: str; Type:       dict; Time: 3.36e-07; Sigma: 3e-08
+Name: `class.fromkeys()`;       Size:    8; Keys: str; Type: frozendict; Time: 3.44e-07; Sigma: 8e-09
+////////////////////////////////////////////////////////////////////////////////
+Name: `class.fromkeys()`;       Size:    8; Keys: int; Type:       dict; Time: 3.46e-07; Sigma: 4e-09
+Name: `class.fromkeys()`;       Size:    8; Keys: int; Type: frozendict; Time: 3.71e-07; Sigma: 7e-09
+////////////////////////////////////////////////////////////////////////////////
+Name: `class.fromkeys()`;       Size: 1000; Keys: str; Type:       dict; Time: 3.75e-05; Sigma: 4e-06
+Name: `class.fromkeys()`;       Size: 1000; Keys: str; Type: frozendict; Time: 2.33e-05; Sigma: 5e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `class.fromkeys()`;       Size: 1000; Keys: int; Type:       dict; Time: 2.75e-05; Sigma: 4e-06
+Name: `class.fromkeys()`;       Size: 1000; Keys: int; Type: frozendict; Time: 2.69e-05; Sigma: 5e-07
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `repr(o)`;                Size:    8; Keys: str; Type:       dict; Time: 2.68e-06; Sigma: 5e-08
+Name: `repr(o)`;                Size:    8; Keys: str; Type: frozendict; Time: 2.88e-06; Sigma: 2e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `repr(o)`;                Size:    8; Keys: int; Type:       dict; Time: 1.23e-06; Sigma: 1e-08
+Name: `repr(o)`;                Size:    8; Keys: int; Type: frozendict; Time: 1.37e-06; Sigma: 2e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `repr(o)`;                Size: 1000; Keys: str; Type:       dict; Time: 2.53e-04; Sigma: 9e-06
+Name: `repr(o)`;                Size: 1000; Keys: str; Type: frozendict; Time: 2.80e-04; Sigma: 8e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `repr(o)`;                Size: 1000; Keys: int; Type:       dict; Time: 1.36e-04; Sigma: 4e-06
+Name: `repr(o)`;                Size: 1000; Keys: int; Type: frozendict; Time: 1.39e-04; Sigma: 5e-06
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
+Name: `str(o)`;                 Size:    8; Keys: str; Type:       dict; Time: 2.74e-06; Sigma: 5e-08
+Name: `str(o)`;                 Size:    8; Keys: str; Type: frozendict; Time: 2.92e-06; Sigma: 2e-07
+////////////////////////////////////////////////////////////////////////////////
+Name: `str(o)`;                 Size:    8; Keys: int; Type:       dict; Time: 1.29e-06; Sigma: 9e-09
+Name: `str(o)`;                 Size:    8; Keys: int; Type: frozendict; Time: 1.43e-06; Sigma: 2e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `str(o)`;                 Size: 1000; Keys: str; Type:       dict; Time: 2.57e-04; Sigma: 5e-06
+Name: `str(o)`;                 Size: 1000; Keys: str; Type: frozendict; Time: 2.80e-04; Sigma: 8e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `str(o)`;                 Size: 1000; Keys: int; Type:       dict; Time: 1.36e-04; Sigma: 4e-06
+Name: `str(o)`;                 Size: 1000; Keys: int; Type: frozendict; Time: 1.39e-04; Sigma: 5e-06

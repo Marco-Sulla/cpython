@@ -3,51 +3,80 @@
 def main():
     import timeit
     import uuid
-    from string import Template
-    from statistics import stdev, mean
-    import msutils
-    import sys
+    from time import time
+    from math import sqrt
     
-    def autorange(stmt, setup="pass", repeat=20, globals=None, max_retries=100):
+    def mindev(data, xbar = None):
+        if not data:
+            raise ValueError("No data")
+        
+        if xbar == None:
+            xbar = min(data)
+        
+        sigma2 = 0
+        
+        for x in data:
+            sigma2 += (x - xbar) ** 2
+        
+        N = len(data) - 1
+        
+        if N < 1:
+            N = 1
+        
+        return sqrt(sigma2 / N)
+    
+    def autorange(stmt, setup="pass", globals=None, ratio=1000, bench_time=10):
         if setup == None:
             setup = "pass"
         
-        if repeat < 2:
-            raise ValueError("`repeat` parameter must be >= 2")
-        
         t = timeit.Timer(stmt=stmt, setup=setup, globals=globals)
         a = t.autorange()
-        number = int(a[0] / 5)
+        
+        num = a[0]
+        number = int(num / ratio)
         
         if number < 1:
             number = 1
         
+        repeat = int(num / number)
+        
+        if repeat < 1:
+            repeat = 1
+        
         results = []
-        data_min = []
         
-        for x in range(max_retries):
-            data_tmp = t.repeat(number=number, repeat=repeat)
-            data = data_tmp + data_min
-            data.sort()
-            data = data[:int(len(data) / 2)]
-            sigma = stdev(data) / number
-            value = mean(data) / number
-            value_magnitude = msutils.magnitudeOrder(value)
+        data_tmp = t.repeat(number=number, repeat=repeat)
+        min_value = min(data_tmp)
+        data_min = [min_value]
+        
+        bench_start = time()
+        
+        while 1:
+            data_min.extend(t.repeat(number=number, repeat=repeat))
             
-            results.append((value, sigma))
-            
-            if 3 * 10**value_magnitude > sigma * 100:
+            if time() - bench_start > bench_time:
                 break
+        
+        data_min.sort()
+        xbar = data_min[0]
+        i = 0
+        
+        while i < len(data_min):
+            i = 0
+            sigma = mindev(data_min, xbar=xbar)
             
-            data_min.append(min(data_tmp))
+            for i in range(2, len(data_min)):
+                if data_min[i] - xbar > 3 * sigma:
+                    break
+            
+            k = i
+            
+            if i < 5:
+                k = 5
+            
+            del data_min[k:]
         
-        sigmas = [x[1] for x in results]
-        values = [x[0] for x in results]
-        sigma = min(sigmas)
-        i = sigmas.index(sigma)
-        value = values[i]
-        
-        return (value, sigma)
+        return (min(data_min) / number, mindev(data_min, xbar=xbar) / number)
     
     
     def getUuid():
@@ -60,18 +89,6 @@ def main():
     str_key = '12323f29-c31f-478c-9b15-e7acc5354df9'
 
     benchmarks = (
-        {"name": "o.get(key)", "code": "get(key)", "setup": "key = getUuid(); get = o.get", }, 
-        {"name": "o[key]", "code": "o[one_key]","setup": "pass", }, 
-        {"name": "key in o", "code": "key in o", "setup": "key = getUuid()", },  
-        {"name": "key not in o", "code": "key not in o", "setup": "key = getUuid()", },
-        {"name": "pickle.dumps(o)", "code": "dumps(o, protocol=-1)", "setup": "from pickle import dumps", },  
-        {"name": "pickle.loads(dump)", "code": "loads(dump, buffers=buffers)", "setup": "from pickle import loads, dumps; buffers = []; dump = dumps(o, protocol=-1, buffer_callback=buffers.append)", },  
-        {"name": "hash(o)", "code": "hash(o)", "setup": "pass", },   
-        {"name": "len(o)", "code": "len(o)", "setup": "pass", },  
-        {"name": "o.keys()", "code": "keys()", "setup": "keys = o.keys", },  
-        {"name": "o.values()", "code": "values()", "setup": "values = o.values", },  
-        {"name": "o.items()", "code": "items()", "setup": "items = o.items", },   
-        {"name": "iter(o)", "code": "iter(o)", "setup": "pass", }, 
         {"name": "for x in o", "code": "for _ in o: pass", "setup": "pass", },
         {"name": "for x in o.keys()", "code": "for _ in keys: pass", "setup": "keys = o.keys()", },  
         {"name": "for x in o.values()", "code": "for _ in values: pass", "setup": "values = o.values()", },  
@@ -84,9 +101,21 @@ def main():
         {"name": "o.copy()", "code": "o.copy()", "setup": "pass", },
         {"name": "o == d", "code": "o == d", "setup": "pass", },
         {"name": "o == o", "code": "o == o", "setup": "pass", },
+        {"name": "o.get(key)", "code": "get(key)", "setup": "key = getUuid(); get = o.get", }, 
+        {"name": "o[key]", "code": "o[one_key]","setup": "pass", }, 
+        {"name": "key in o", "code": "key in o", "setup": "key = getUuid()", },  
+        {"name": "pickle.dumps(o)", "code": "dumps(o, protocol=-1)", "setup": "from pickle import dumps", },  
+        {"name": "pickle.loads(dump)", "code": "loads(dump)", "setup": "from pickle import loads, dumps; dump = dumps(o, protocol=-1)", },  
         {"name": "class.fromkeys()", "code": "fromkeys(keys)", "setup": "fromkeys = type(o).fromkeys; keys = o.keys()", },
         {"name": "repr(o)", "code": "repr(o)", "setup": "pass", },
         {"name": "str(o)", "code": "str(o)", "setup": "pass", },
+        # {"name": "key not in o", "code": "key not in o", "setup": "key = getUuid()", },
+        # {"name": "hash(o)", "code": "hash(o)", "setup": "pass", },   
+        # {"name": "len(o)", "code": "len(o)", "setup": "pass", },  
+        # {"name": "o.keys()", "code": "keys()", "setup": "keys = o.keys", },  
+        # {"name": "o.values()", "code": "values()", "setup": "values = o.values", },  
+        # {"name": "o.items()", "code": "items()", "setup": "items = o.items", },   
+        # {"name": "iter(o)", "code": "iter(o)", "setup": "pass", }, 
     )
     
     dict_collection = []
@@ -96,9 +125,8 @@ def main():
         d2 = dict()
 
         for i in range(n-1):
-            val = getUuid()
-            d1[getUuid()] = val
-            d2[i] = val
+            d1[getUuid()] = getUuid()
+            d2[i] = i
         
         d1[str_key] = getUuid()
         d2[999] = 999
@@ -128,6 +156,7 @@ def main():
                         stmt = benchmark["code"], 
                         setup = benchmark["setup"], 
                         globals = {"o": o.copy(), "getUuid": getUuid, "d": d.copy(), "one_key": one_key},
+                        bench_time = 3, 
                     )
 
                     print(print_tpl.format(

@@ -3,52 +3,81 @@
 def main():
     import timeit
     import uuid
-    from statistics import stdev, mean
-    import msutils
-    import sys
     import immutables
-    import copy
+    from math import sqrt
+    from time import time
     
-    def autorange(stmt, setup="pass", repeat=20, globals=None, max_retries=100):
+    def mindev(data, xbar = None):
+        if not data:
+            raise ValueError("No data")
+        
+        if xbar == None:
+            xbar = min(data)
+        
+        sigma2 = 0
+        
+        for x in data:
+            sigma2 += (x - xbar) ** 2
+        
+        N = len(data) - 1
+        
+        if N < 1:
+            N = 1
+        
+        return sqrt(sigma2 / N)
+    
+    def autorange(stmt, setup="pass", globals=None, ratio=1000, bench_time=10):
         if setup == None:
             setup = "pass"
         
-        if repeat < 2:
-            raise ValueError("`repeat` parameter must be >= 2")
-        
         t = timeit.Timer(stmt=stmt, setup=setup, globals=globals)
         a = t.autorange()
-        number = int(a[0] / 5)
+        
+        num = a[0]
+        number = int(num / ratio)
         
         if number < 1:
             number = 1
         
+        repeat = int(num / number)
+        
+        if repeat < 1:
+            repeat = 1
+        
         results = []
-        data_min = []
         
-        for x in range(max_retries):
-            data_tmp = t.repeat(number=number, repeat=repeat)
-            data = data_tmp + data_min
-            data.sort()
-            data = data[:int(len(data) / 2)]
-            sigma = stdev(data) / number
-            value = mean(data) / number
-            value_magnitude = msutils.magnitudeOrder(value)
+        data_tmp = t.repeat(number=number, repeat=repeat)
+        min_value = min(data_tmp)
+        data_min = [min_value]
+        
+        bench_start = time()
+        
+        while 1:
+            data_min.extend(t.repeat(number=number, repeat=repeat))
             
-            results.append((value, sigma))
-            
-            if 3 * 10**value_magnitude > sigma * 100:
+            if time() - bench_start > bench_time:
                 break
+        
+        data_min.sort()
+        xbar = data_min[0]
+        i = 0
+        
+        while i < len(data_min):
+            i = 0
+            sigma = mindev(data_min, xbar=xbar)
             
-            data_min.append(min(data_tmp))
+            for i in range(2, len(data_min)):
+                if data_min[i] - xbar > 3 * sigma:
+                    break
+            
+            k = i
+            
+            if i < 5:
+                k = 5
+            
+            del data_min[k:]
         
-        sigmas = [x[1] for x in results]
-        values = [x[0] for x in results]
-        sigma = min(sigmas)
-        i = sigmas.index(sigma)
-        value = values[i]
-        
-        return (value, sigma)
+        return (min(data_min) / number, mindev(data_min, xbar=xbar) / number)
     
     
     def getUuid():
@@ -71,9 +100,8 @@ def main():
         d2 = dict()
 
         for i in range(n-1):
-            val = getUuid()
-            d1[getUuid()] = val
-            d2[i] = val
+            d1[getUuid()] = getUuid()
+            d2[i] = i
         
         d1[str_key] = getUuid()
         d2[999] = 999
