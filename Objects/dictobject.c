@@ -1470,10 +1470,6 @@ static int frozendict_resize_empty(PyFrozenDictObject* mp, const Py_ssize_t mins
         return -1;
     }
     
-    for (Py_ssize_t i = 0; i < size; i++) {
-        values[i] = NULL;
-    }
-    
     mp->ma_values = values;
     
     const Py_ssize_t numentries = mp->ma_used;

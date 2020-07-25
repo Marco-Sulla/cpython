@@ -204,6 +204,19 @@ Name: `pickle.dumps(o)`;        Size: 1000; Keys: int; Type:       dict; Time: 3
 Name: `pickle.dumps(o)`;        Size: 1000; Keys: int; Type: frozendict; Time: 3.01e-05; Sigma: 7e-07
 ################################################################################
 ////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.loads(dump)`;     Size:    8; Keys: str; Type:       dict; Time: 1.44e-06; Sigma: 2e-08
+Name: `pickle.loads(dump)`;     Size:    8; Keys: str; Type: frozendict; Time: 1.70e-06; Sigma: 3e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.loads(dump)`;     Size:    8; Keys: int; Type:       dict; Time: 6.27e-07; Sigma: 5e-09
+Name: `pickle.loads(dump)`;     Size:    8; Keys: int; Type: frozendict; Time: 8.61e-07; Sigma: 2e-08
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.loads(dump)`;     Size: 1000; Keys: str; Type:       dict; Time: 1.63e-04; Sigma: 3e-06
+Name: `pickle.loads(dump)`;     Size: 1000; Keys: str; Type: frozendict; Time: 1.67e-04; Sigma: 5e-06
+////////////////////////////////////////////////////////////////////////////////
+Name: `pickle.loads(dump)`;     Size: 1000; Keys: int; Type:       dict; Time: 5.72e-05; Sigma: 1e-06
+Name: `pickle.loads(dump)`;     Size: 1000; Keys: int; Type: frozendict; Time: 6.65e-05; Sigma: 1e-06
+################################################################################
+////////////////////////////////////////////////////////////////////////////////
 Name: `class.fromkeys()`;       Size:    8; Keys: str; Type:       dict; Time: 3.36e-07; Sigma: 3e-08
 Name: `class.fromkeys()`;       Size:    8; Keys: str; Type: frozendict; Time: 3.44e-07; Sigma: 8e-09
 ////////////////////////////////////////////////////////////////////////////////
