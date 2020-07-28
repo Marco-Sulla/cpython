@@ -63,7 +63,7 @@ def main():
         i = 0
         
         while i < len(data_min):
-            i = 0
+            i = len(data_min)
             sigma = mindev(data_min, xbar=xbar)
             
             for i in range(2, len(data_min)):
@@ -84,7 +84,7 @@ def main():
         return str(uuid.uuid4())
     
     
-    dictionary_sizes = (8, 1000)
+    dictionary_sizes = (4, 8, 1000)
     
     print_tpl = "Name: {name: <25} Size: {size: >4}; Keys: {keys: >3}; Type: {type: >10}; Time: {time:.2e}; Sigma: {sigma:.0e}"
     str_key = '12323f29-c31f-478c-9b15-e7acc5354df9'
@@ -96,8 +96,8 @@ def main():
     dict_collection = []
     
     for n in dictionary_sizes:
-        d1 = dict()
-        d2 = dict()
+        d1 = {}
+        d2 = {}
 
         for i in range(n-1):
             d1[getUuid()] = getUuid()

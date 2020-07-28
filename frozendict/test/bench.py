@@ -62,7 +62,7 @@ def main():
         i = 0
         
         while i < len(data_min):
-            i = 0
+            i = len(data_min)
             sigma = mindev(data_min, xbar=xbar)
             
             for i in range(2, len(data_min)):
@@ -83,10 +83,14 @@ def main():
         return str(uuid.uuid4())
     
     
-    dictionary_sizes = (8, 1000)
+    dictionary_sizes = (5, 1000)
     
     print_tpl = "Name: {name: <25} Size: {size: >4}; Keys: {keys: >3}; Type: {type: >10}; Time: {time:.2e}; Sigma: {sigma:.0e}"
     str_key = '12323f29-c31f-478c-9b15-e7acc5354df9'
+    int_key = dictionary_sizes[0] - 2
+    
+    if int_key < 0:
+        int_key = 0
 
     benchmarks = (
         {"name": "for x in o", "code": "for _ in o: pass", "setup": "pass", },
@@ -109,20 +113,20 @@ def main():
         {"name": "class.fromkeys()", "code": "fromkeys(keys)", "setup": "fromkeys = type(o).fromkeys; keys = o.keys()", },
         {"name": "repr(o)", "code": "repr(o)", "setup": "pass", },
         {"name": "str(o)", "code": "str(o)", "setup": "pass", },
-        # {"name": "key not in o", "code": "key not in o", "setup": "key = getUuid()", },
-        # {"name": "hash(o)", "code": "hash(o)", "setup": "pass", },   
-        # {"name": "len(o)", "code": "len(o)", "setup": "pass", },  
-        # {"name": "o.keys()", "code": "keys()", "setup": "keys = o.keys", },  
-        # {"name": "o.values()", "code": "values()", "setup": "values = o.values", },  
-        # {"name": "o.items()", "code": "items()", "setup": "items = o.items", },   
-        # {"name": "iter(o)", "code": "iter(o)", "setup": "pass", }, 
+        {"name": "key not in o", "code": "key not in o", "setup": "key = getUuid()", },
+        {"name": "hash(o)", "code": "hash(o)", "setup": "pass", },   
+        {"name": "len(o)", "code": "len(o)", "setup": "pass", },  
+        {"name": "o.keys()", "code": "keys()", "setup": "keys = o.keys", },  
+        {"name": "o.values()", "code": "values()", "setup": "values = o.values", },  
+        {"name": "o.items()", "code": "items()", "setup": "items = o.items", },   
+        {"name": "iter(o)", "code": "iter(o)", "setup": "pass", }, 
     )
     
     dict_collection = []
     
     for n in dictionary_sizes:
-        d1 = dict()
-        d2 = dict()
+        d1 = {}
+        d2 = {}
 
         for i in range(n-1):
             d1[getUuid()] = getUuid()
@@ -134,20 +138,21 @@ def main():
         fd1 = frozendict(d1)
         fd2 = frozendict(d2)
         
-        dict_collection.append({"str": ((d1, fd1), str_key), "int": ((d2, fd2), 6)})
+        dict_collection.append({"str": ((d1, fd1), str_key), "int": ((d2, fd2), int_key)})
         
     for benchmark in benchmarks:
         print("################################################################################")
         
         for dict_collection_entry in dict_collection:
             for (dict_keys, (dicts, one_key)) in dict_collection_entry.items():
+        
+                if benchmark["name"] == "constructor(**d)" and dict_keys == "int":
+                    continue
+                
                 print("////////////////////////////////////////////////////////////////////////////////")
                 
                 for o in dicts:
                     if benchmark["name"] == "hash(o)" and type(o) == dict:
-                        continue
-                    
-                    if benchmark["name"] == "constructor(**d)" and dict_keys == "int":
                         continue
                     
                     d = dicts[0]
@@ -167,6 +172,8 @@ def main():
                         time = bench_res[0],
                         sigma = bench_res[1],  
                     ))
+    
+    print("################################################################################")
 
 if __name__ == "__main__":
     main()
