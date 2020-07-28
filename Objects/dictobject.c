@@ -4102,6 +4102,10 @@ static int frozendict_init(PyObject* self, PyObject* args, PyObject* kwds) {
 static PyObject *
 dict_iter(PyDictObject *dict)
 {
+    if PyFrozenDict_CheckExact(dict) {
+        return dictiter_new(dict, &PyFrozenDictIterKey_Type);
+    }
+    
     return dictiter_new(dict, &PyDictIterKey_Type);
 }
 
@@ -4466,6 +4470,23 @@ fail:
     return NULL;
 }
 
+static PyObject* frozendictiter_iternextkey(dictiterobject* di) {
+    if (di->len == 0) {
+        Py_CLEAR(di->di_dict);
+        return NULL;
+    }
+    
+    assert(PyDict_Check(di->di_dict));
+    assert(di->di_pos >= 0);
+    assert(di->di_dict->ma_values[di->di_pos] != NULL);
+    
+    PyObject* key = DK_ENTRIES(di->di_dict->ma_keys)[di->di_pos].me_key;
+    di->len--;
+    di->di_pos++;
+    Py_INCREF(key);
+    return key;
+}
+
 PyTypeObject PyDictIterKey_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "dict_keyiterator",                         /* tp_name */
@@ -4495,6 +4516,39 @@ PyTypeObject PyDictIterKey_Type = {
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
     (iternextfunc)dictiter_iternextkey,         /* tp_iternext */
+    dictiter_methods,                           /* tp_methods */
+    0,
+};
+
+PyTypeObject PyFrozenDictIterKey_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "frozendict_keyiterator",                   /* tp_name */
+    sizeof(dictiterobject),                     /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)dictiter_dealloc,               /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)dictiter_traverse,            /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    (iternextfunc)frozendictiter_iternextkey,   /* tp_iternext */
     dictiter_methods,                           /* tp_methods */
     0,
 };

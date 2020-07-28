@@ -91,6 +91,7 @@ PyAPI_DATA(PyTypeObject) PyDictItems_Type;
 /* Dictionary (key, value, items) iterators */
 
 PyAPI_DATA(PyTypeObject) PyDictIterKey_Type;
+PyAPI_DATA(PyTypeObject) PyFrozenDictIterKey_Type;
 PyAPI_DATA(PyTypeObject) PyDictIterValue_Type;
 PyAPI_DATA(PyTypeObject) PyDictIterItem_Type;
 
