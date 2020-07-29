@@ -151,7 +151,7 @@ def test_iter(fd):
     for x in iter(fd):
         items.append((x, fd[x]))
 
-    assert tuple(fd.items()) == tuple(items)
+    assert tuple(items) == tuple(fd.items())
 
 ################################################################################
 # frozendict-only tests

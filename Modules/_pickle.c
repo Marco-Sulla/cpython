@@ -5848,7 +5848,6 @@ load_frozendict(UnpicklerObject *self)
         return -1;
 
     frozendict = PyFrozenDict_New(items, NULL);
-    Py_DECREF(items);
     if (frozendict == NULL)
         return -1;
 

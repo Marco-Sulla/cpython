@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-def main():
+def main(number):
     import timeit
     import uuid
     from time import time
@@ -25,23 +25,30 @@ def main():
         
         return sqrt(sigma2 / N)
     
-    def autorange(stmt, setup="pass", globals=None, ratio=1000, bench_time=10):
+    def autorange(stmt, setup="pass", globals=None, ratio=1000, bench_time=10, number=None):
         if setup == None:
             setup = "pass"
         
         t = timeit.Timer(stmt=stmt, setup=setup, globals=globals)
-        a = t.autorange()
+        break_immediately = False
         
-        num = a[0]
-        number = int(num / ratio)
+        if number == None:
+            a = t.autorange()
+            
+            num = a[0]
+            number = int(num / ratio)
+            
+            if number < 1:
+                number = 1
+            
+            repeat = int(num / number)
+            
+            if repeat < 1:
+                repeat = 1
         
-        if number < 1:
-            number = 1
-        
-        repeat = int(num / number)
-        
-        if repeat < 1:
+        else:
             repeat = 1
+            break_immediately = True
         
         results = []
         
@@ -54,7 +61,7 @@ def main():
         while 1:
             data_min.extend(t.repeat(number=number, repeat=repeat))
             
-            if time() - bench_start > bench_time:
+            if break_immediately or time() - bench_start > bench_time:
                 break
         
         data_min.sort()
@@ -109,8 +116,8 @@ def main():
         {"name": "o[key]", "code": "o[one_key]","setup": "pass", }, 
         {"name": "key in o", "code": "key in o", "setup": "key = getUuid()", },  
         {"name": "pickle.dumps(o)", "code": "dumps(o, protocol=-1)", "setup": "from pickle import dumps", },  
-        # {"name": "pickle.loads(dump)", "code": "loads(dump)", "setup": "from pickle import loads, dumps; dump = dumps(o, protocol=-1)", },  
-        {"name": "class.fromkeys()", "code": "fromkeys(keys)", "setup": "fromkeys = type(o).fromkeys; keys = o.keys()", },
+        {"name": "pickle.loads(dump)", "code": "loads(dump)", "setup": "from pickle import loads, dumps; dump = dumps(o, protocol=-1)", },  
+        # {"name": "class.fromkeys()", "code": "fromkeys(keys)", "setup": "fromkeys = type(o).fromkeys; keys = o.keys()", },
         {"name": "repr(o)", "code": "repr(o)", "setup": "pass", },
         {"name": "str(o)", "code": "str(o)", "setup": "pass", },
         {"name": "key not in o", "code": "key not in o", "setup": "key = getUuid()", },
@@ -155,13 +162,14 @@ def main():
                     if benchmark["name"] == "hash(o)" and type(o) == dict:
                         continue
                     
+                    
                     d = dicts[0]
                     
                     bench_res = autorange(
                         stmt = benchmark["code"], 
                         setup = benchmark["setup"], 
                         globals = {"o": o.copy(), "getUuid": getUuid, "d": d.copy(), "one_key": one_key},
-                        bench_time = 3, 
+                        number = number, 
                     )
 
                     print(print_tpl.format(
@@ -176,4 +184,23 @@ def main():
     print("################################################################################")
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    number = None
+    argv = sys.argv
+    len_argv = len(argv)
+    max_positional_args = 1
+    max_len_argv = max_positional_args + 1
+    
+    if len_argv > max_len_argv:
+        raise ValueError(
+            ("{name} must not accept more than {nargs} positional " + 
+            "command-line parameters").format(name=__name__, nargs=max_positional_args)
+        )
+    
+    number_arg_pos = 1
+    
+    if len_argv == number_arg_pos + 1:
+        number = int(argv[number_arg_pos])
+    
+    main(number)

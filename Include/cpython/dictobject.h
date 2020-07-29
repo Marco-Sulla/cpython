@@ -7,7 +7,6 @@ extern "C" {
 #endif
 
 typedef struct _dictkeysobject PyDictKeysObject;
-typedef struct _frozendictiterobject frozendictiterobject;
 
 /* The ma_values pointer is NULL for a combined table
  * or points to an array of PyObject* for a split table
@@ -42,14 +41,13 @@ typedef struct {
     
     Py_hash_t _hash;
     short _hash_calculated;
-    frozendictiterobject* _iter;
 } PyFrozenDictObject;
 
-struct _frozendictiterobject {
+typedef struct {
     PyObject_HEAD
     PyFrozenDictObject *di_dict;
     Py_ssize_t di_pos;
-};
+} frozendictiterobject;
 
 PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
                                        Py_hash_t hash);
