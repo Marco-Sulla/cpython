@@ -109,7 +109,7 @@ def main():
         {"name": "o[key]", "code": "o[one_key]","setup": "pass", }, 
         {"name": "key in o", "code": "key in o", "setup": "key = getUuid()", },  
         {"name": "pickle.dumps(o)", "code": "dumps(o, protocol=-1)", "setup": "from pickle import dumps", },  
-        {"name": "pickle.loads(dump)", "code": "loads(dump)", "setup": "from pickle import loads, dumps; dump = dumps(o, protocol=-1)", },  
+        # {"name": "pickle.loads(dump)", "code": "loads(dump)", "setup": "from pickle import loads, dumps; dump = dumps(o, protocol=-1)", },  
         {"name": "class.fromkeys()", "code": "fromkeys(keys)", "setup": "fromkeys = type(o).fromkeys; keys = o.keys()", },
         {"name": "repr(o)", "code": "repr(o)", "setup": "pass", },
         {"name": "str(o)", "code": "str(o)", "setup": "pass", },

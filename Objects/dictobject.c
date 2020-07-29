@@ -4436,7 +4436,6 @@ dictiter_dealloc(dictiterobject *di)
 static void
 frozendictiter_dealloc(dictiterobject *di)
 {
-    Py_CLEAR(di->di_dict);
     PyObject_Del(di);
 }
 
