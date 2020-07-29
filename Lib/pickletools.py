@@ -1035,6 +1035,11 @@ pydict = StackObject(
     obtype=dict,
     doc="A Python dict object.")
 
+pyfrozendict = StackObject(
+    name="frozendict",
+    obtype=frozendict,
+    doc="A Python frozendict object.")
+
 pyset = StackObject(
     name="set",
     obtype=set,
@@ -1656,6 +1661,14 @@ opcodes = [
       Stack before: ... markobject 1 2 3 'abc'
       Stack after:  ... {1: 2, 3: 'abc'}
       """),
+
+    I(name='FROZENDICT',
+      code='\x99',
+      arg=None,
+      stack_before=[markobject, stackslice],
+      stack_after=[pyfrozendict],
+      proto=0,
+      doc="""Build a frozendict out of the topmost stack slice, after markobject."""),
 
     I(name='SETITEM',
       code='s',

@@ -237,6 +237,7 @@ static Py_ssize_t lookdict_split(PyDictObject *mp, PyObject *key,
 static int dictresize(PyDictObject *mp, Py_ssize_t minused);
 
 static PyObject* dict_iter(PyDictObject *dict);
+static PyObject* frozendict_iter(PyDictObject *dict);
 
 /*Global counter used to set ma_version_tag field of dictionary.
  * It is incremented each time that a dictionary is created and each
@@ -2236,6 +2237,11 @@ dict_dealloc(PyDictObject *mp)
         assert(keys->dk_refcnt == 1);
         dictkeys_decref(keys);
     }
+    
+    if (PyFrozenDict_CheckExact(mp)) {
+        Py_CLEAR(((PyFrozenDictObject*) mp)->_iter);
+    }
+    
     if (numfree < PyDict_MAXFREELIST && Py_TYPE(mp) == &PyDict_Type)
         free_list[numfree++] = mp;
     else
@@ -2662,7 +2668,13 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
     
     PyDictObject* mp = (PyDictObject*) a;
     
-    if (PyDict_Check(b) && (Py_TYPE(b)->tp_iter == (getiterfunc)dict_iter)) {
+    if (
+        PyDict_Check(b) && 
+        (
+            Py_TYPE(b)->tp_iter == (getiterfunc)dict_iter ||
+            Py_TYPE(b)->tp_iter == (getiterfunc)frozendict_iter
+        )
+    ) {
         const PyDictObject* other = (PyDictObject*)b;
         PyDictKeyEntry* ep0 = DK_ENTRIES(other->ma_keys);
         PyDictKeyEntry* entry;
@@ -3001,7 +3013,14 @@ dict_merge(PyObject *a, PyObject *b, int override)
         return -1;
     }
     mp = (PyDictObject*)a;
-    if (PyDict_Check(b) && (Py_TYPE(b)->tp_iter == (getiterfunc)dict_iter)) {
+    
+    if (
+        PyDict_Check(b) && 
+        (
+            Py_TYPE(b)->tp_iter == (getiterfunc)dict_iter ||
+            Py_TYPE(b)->tp_iter == (getiterfunc)frozendict_iter
+        )
+    ) {
         other = (PyDictObject*)b;
         if (other == mp || other->ma_used == 0)
             /* a.update(a) or a.update({}); nothing to do */
@@ -4099,14 +4118,47 @@ static int frozendict_init(PyObject* self, PyObject* args, PyObject* kwds) {
     return 0;
 }
 
+static void _frozendictiter_normal_reset(frozendictiterobject* di) {
+    di->di_pos = 0;
+}
+
+static PyObject* frozendictiter_normal_reset(frozendictiterobject* di, PyObject* Py_UNUSED(ignored)) {
+    _frozendictiter_normal_reset(di);
+    Py_RETURN_NONE;
+}
+
+static PyObject* frozendictiter_normal_new(PyFrozenDictObject* dict, PyTypeObject* itertype) {
+    // frozendictiterobject* di = (frozendictiterobject*) (dict->_iter);
+    
+    // if (di == NULL) {
+        // di = PyObject_New(frozendictiterobject, itertype);
+        frozendictiterobject* di = PyObject_New(frozendictiterobject, itertype);
+        
+        if (di == NULL) {
+            return NULL;
+        }
+        
+        Py_INCREF(dict);
+        di->di_dict = dict;
+        dict->_iter = di;
+    // }
+    
+    
+    _frozendictiter_normal_reset(di);
+    
+    return (PyObject*) di;
+}
+
 static PyObject *
 dict_iter(PyDictObject *dict)
 {
-    if PyFrozenDict_CheckExact(dict) {
-        return dictiter_new(dict, &PyFrozenDictIterKey_Type);
-    }
-    
     return dictiter_new(dict, &PyDictIterKey_Type);
+}
+
+static PyObject *
+frozendict_iter(PyDictObject *dict)
+{
+    return frozendictiter_normal_new((PyFrozenDictObject*) dict, &PyFrozenDictIterKey_Type);
 }
 
 #define MINUSONE_HASH ((Py_hash_t) -1)
@@ -4235,7 +4287,7 @@ PyTypeObject PyFrozenDict_Type = {
     0,                                          /* tp_clear */
     frozendict_richcompare,                     /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
-    (getiterfunc)dict_iter,                     /* tp_iter */
+    (getiterfunc)frozendict_iter,               /* tp_iter */
     0,                                          /* tp_iternext */
     frozen_mapp_methods,                        /* tp_methods */
     0,                                          /* tp_members */
@@ -4381,6 +4433,13 @@ dictiter_dealloc(dictiterobject *di)
     PyObject_GC_Del(di);
 }
 
+static void
+frozendictiter_dealloc(dictiterobject *di)
+{
+    Py_CLEAR(di->di_dict);
+    PyObject_Del(di);
+}
+
 static int
 dictiter_traverse(dictiterobject *di, visitproc visit, void *arg)
 {
@@ -4398,6 +4457,10 @@ dictiter_len(dictiterobject *di, PyObject *Py_UNUSED(ignored))
     return PyLong_FromSize_t(len);
 }
 
+static PyObject* frozendictiter_len(dictiterobject* di, PyObject* Py_UNUSED(ignored)) {
+    return PyLong_FromSize_t(di->di_dict->ma_used - di->di_pos);
+}
+
 PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
@@ -4411,6 +4474,17 @@ static PyMethodDef dictiter_methods[] = {
      length_hint_doc},
      {"__reduce__", (PyCFunction)(void(*)(void))dictiter_reduce, METH_NOARGS,
      reduce_doc},
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyMethodDef frozendictiter_methods[] = {
+    {"__length_hint__", (PyCFunction)(void(*)(void))frozendictiter_len, METH_NOARGS,
+     length_hint_doc},
+     {"__reduce__", (PyCFunction)(void(*)(void))dictiter_reduce, METH_NOARGS,
+     reduce_doc},
+    {"reset", (PyCFunction)(void(*)(void))frozendictiter_normal_reset, METH_NOARGS,
+     ""},
+     
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -4470,18 +4544,19 @@ fail:
     return NULL;
 }
 
-static PyObject* frozendictiter_iternextkey(dictiterobject* di) {
-    if (di->len == 0) {
-        Py_CLEAR(di->di_dict);
+static PyObject* frozendictiter_iternextkey(frozendictiterobject* di) {
+    Py_ssize_t pos = di->di_pos;
+    PyFrozenDictObject* d = di->di_dict;
+    
+    if (pos >= d->ma_used) {
         return NULL;
     }
     
-    assert(PyDict_Check(di->di_dict));
+    assert(PyDict_Check(d));
     assert(di->di_pos >= 0);
-    assert(di->di_dict->ma_values[di->di_pos] != NULL);
+    assert(d->ma_values[di->di_pos] != NULL);
     
-    PyObject* key = DK_ENTRIES(di->di_dict->ma_keys)[di->di_pos].me_key;
-    di->len--;
+    PyObject* key = DK_ENTRIES(d->ma_keys)[di->di_pos].me_key;
     di->di_pos++;
     Py_INCREF(key);
     return key;
@@ -4523,10 +4598,10 @@ PyTypeObject PyDictIterKey_Type = {
 PyTypeObject PyFrozenDictIterKey_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "frozendict_keyiterator",                   /* tp_name */
-    sizeof(dictiterobject),                     /* tp_basicsize */
+    sizeof(frozendictiterobject),               /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)dictiter_dealloc,               /* tp_dealloc */
+    (destructor)frozendictiter_dealloc,         /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -4541,15 +4616,15 @@ PyTypeObject PyFrozenDictIterKey_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)dictiter_traverse,            /* tp_traverse */
+    0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
     (iternextfunc)frozendictiter_iternextkey,   /* tp_iternext */
-    dictiter_methods,                           /* tp_methods */
+    frozendictiter_methods,                     /* tp_methods */
     0,
 };
 
