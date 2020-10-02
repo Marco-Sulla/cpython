@@ -970,7 +970,6 @@ class _Pickler:
         self.memoize(obj)
         self._batch_setitems(obj.items())
     dispatch[dict] = save_dict
-    
     if PyStringMap is not None:
         dispatch[PyStringMap] = save_dict
     
