@@ -19,12 +19,12 @@ PyAPI_DATA(PyTypeObject) PyFrozenDict_Type;
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_DICT_SUBCLASS)
 #define PyFrozenDict_Check(op) \
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_DICT_SUBCLASS)
-#define PyDict_CheckExact(op) (Py_TYPE(op) == &PyDict_Type)
-#define PyFrozenDict_CheckExact(op) (Py_TYPE(op) == &PyFrozenDict_Type)
+#define PyDict_CheckExact(op) Py_IS_TYPE(op, &PyDict_Type)
+#define PyFrozenDict_CheckExact(op) Py_IS_TYPE(op, &PyFrozenDict_Type)
 
 #define PyAnyDict_Check(ob) \
     ( \
-        Py_TYPE(ob) == &PyDict_Type || Py_TYPE(ob) == &PyFrozenDict_Type || \
+        Py_IS_TYPE(op, &PyDict_Type) || Py_IS_TYPE(op, &PyFrozenDict_Type) || \
         PyType_IsSubtype(Py_TYPE(ob), &PyDict_Type) || \
         PyType_IsSubtype(Py_TYPE(ob), &PyFrozenDict_Type) \
     )
