@@ -93,6 +93,7 @@ class MiscTestCase(unittest.TestCase):
         }
         support.check__all__(self, pickletools, not_exported=not_exported)
 
+
 def test_main():
     support.run_unittest(OptimizedPickleTests)
     support.run_unittest(MiscTestCase)
