@@ -84,7 +84,7 @@ def main():
         return str(uuid.uuid4())
     
     
-    dictionary_sizes = (4, 8, 1000)
+    dictionary_sizes = (42, )
     
     print_tpl = "Name: {name: <25} Size: {size: >4}; Keys: {keys: >3}; Type: {type: >10}; Time: {time:.2e}; Sigma: {sigma:.0e}"
     str_key = '12323f29-c31f-478c-9b15-e7acc5354df9'

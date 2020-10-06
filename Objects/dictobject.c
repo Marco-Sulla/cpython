@@ -1081,84 +1081,6 @@ static int dict_has_only_unicode_keys_exact(PyDictObject* mp) {
     return 1;
 }
 
-/* it does not work
-static PyDictKeysObject *
-frozendict_clone(const PyDictObject *orig, PyObject*** newvalues)
-{
-    assert(PyDict_Check(orig));
-    assert(
-        Py_TYPE(orig)->tp_iter == (getiterfunc)dict_iter 
-        || Py_TYPE(orig)->tp_iter == (getiterfunc)frozendict_iter
-    );
-    
-    PyDictKeysObject *old_keys = orig->ma_keys;
-    Py_ssize_t keys_size = _PyDict_KeysSize(old_keys);
-    PyDictKeysObject *keys = PyObject_Malloc(keys_size);
-    if (keys == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    memcpy(keys, old_keys, keys_size);
-    
-    if (PyFrozenDict_CheckExact(orig)) {
-        keys->dk_lookup = old_keys->dk_lookup;
-    }
-    else {
-        if (old_keys->dk_lookup == lookdict_unicode_nodummy) {
-            keys->dk_lookup = frozendict_lookup_unicode;
-        }
-        else {
-            keys->dk_lookup = frozendict_lookup;
-        }
-    }
-    
-    PyDictKeyEntry *ep0 = DK_ENTRIES(keys);
-    const Py_ssize_t n = keys->dk_nentries;
-    
-    PyObject** oldvalues = orig->ma_values;
-    const int is_split = (oldvalues != NULL);
-    *newvalues = new_values(n);
-
-    if (newvalues == NULL) {
-        dictkeys_decref(keys, 1);
-        PyErr_NoMemory();
-        return NULL;
-    }
-    
-    if (is_split) {
-        memcpy(newvalues, oldvalues, n * sizeof(PyObject*));
-    }
-    
-    PyObject* value;
-    
-    for (Py_ssize_t i=0, j=0; i<n; i++) {
-        PyDictKeyEntry *entry = &ep0[i];
-        
-        if (is_split) {
-            value = oldvalues[i];
-            Py_INCREF(value);
-            Py_INCREF(entry->me_key);
-        }
-        else {
-            value = entry->me_value;
-            
-            if (value != NULL) {
-                Py_INCREF(entry->me_value);
-                *newvalues[j] = value;
-                j++;
-                Py_INCREF(entry->me_key);
-            }
-        }
-    }
-
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
-    return keys;
-}
-*/
-
 int
 _PyDict_HasOnlyStringKeys(PyObject *dict)
 {
@@ -1509,6 +1431,10 @@ static int frozendict_resize(PyDictObject* mp, Py_ssize_t minsize) {
     assert(newsize >= PyDict_MINSIZE);
 
     PyDictKeysObject* oldkeys = mp->ma_keys;
+    
+    if (oldkeys != NULL && newsize == DK_SIZE(oldkeys)) {
+        return 0;
+    }
 
     /* Allocate a new table. */
     PyDictKeysObject* new_keys = new_keys_object(newsize);
@@ -2366,11 +2292,11 @@ static void frozendict_update_lookup(PyObject* op) {
     PyDictObject* mp = (PyDictObject*) op;
     PyDictKeysObject* keys = mp->ma_keys;
     
-    if (
-            keys->dk_lookup == frozendict_lookup_unicode
-            && ! dict_has_only_unicode_keys_exact(mp)
-        ) {
-            keys->dk_lookup = frozendict_lookup;
+    if (dict_has_only_unicode_keys_exact(mp)) {
+            keys->dk_lookup = frozendict_lookup_unicode;
+    }
+    else {
+        keys->dk_lookup = frozendict_lookup;
     }
 };
 
@@ -2969,28 +2895,62 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
         )
     ) {
         const PyDictObject* other = (PyDictObject*)b;
+        const Py_ssize_t numentries = other->ma_used;
         
-        if (other == mp || other->ma_used == 0) {
+        if (other == mp || numentries == 0) {
             /* a.update(a) or a.update({}); nothing to do */
             return 0;
         }
         
+        const int is_other_split = other->ma_values != NULL;
+        
+        
+        
+        /* Do one big resize at the start, rather than
+         * incrementally resizing as we insert new items.  Expect
+         * that there will be no (or few) overlapping keys.
+         */
+        if (mp->ma_keys->dk_usable < numentries) {
+            if (frozendict_resize(mp, mp->ma_used + numentries)) {
+               return -1;
+            }
+        }
+        
         /* it does not work
-        if (empty && other->ma_used == other->ma_keys->dk_nentries) {
+        if (empty && numentries == other->ma_keys->dk_nentries) {
             // clone the dict
-            PyObject** values;
-            PyDictKeysObject* keys = frozendict_clone(other, &values);
+            PyDictKeysObject* new_keys = mp->ma_keys;
+            PyObject** newvalues = mp->ma_values;
+            const PyDictKeysObject* oldkeys = other->ma_keys;
+            PyDictKeyEntry* newentries = DK_ENTRIES(new_keys);
+            PyDictKeyEntry* oldentries = DK_ENTRIES(oldkeys);
+            PyObject** oldvalues = other->ma_values;
             
-            if (keys == NULL || values == NULL) {
-                return -1;
+            new_keys->dk_lookup = oldkeys->dk_lookup;
+            
+            memcpy(
+                newentries, 
+                oldentries, 
+                numentries * sizeof(PyDictKeyEntry)
+            );
+            
+            if (is_other_split) {
+                memcpy(newvalues, oldvalues, numentries * sizeof(PyObject*));
             }
             
-            dictkeys_decref(mp->ma_keys, 0);
-            free_values(mp->ma_values);
+            for (Py_ssize_t i=0; i<numentries; i++) {
+                Py_INCREF(newentries[i].me_key);
+                if (! is_other_split) {
+                    newvalues[i] = oldentries[i].me_value;
+                }
+                
+                Py_INCREF(newvalues[i]);
+            }
             
-            mp->ma_keys = keys;
-            mp->ma_values = values;
-            mp->ma_used = other->ma_used;
+            build_indices(new_keys, newentries, numentries);
+            new_keys->dk_usable -= numentries;
+            new_keys->dk_nentries = numentries;
+            mp->ma_used = numentries;
             mp->ma_version_tag = DICT_NEXT_VERSION();
             ASSERT_CONSISTENT(mp);
 
@@ -3002,22 +2962,11 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
         }
         */
         
-        /* Do one big resize at the start, rather than
-         * incrementally resizing as we insert new items.  Expect
-         * that there will be no (or few) overlapping keys.
-         */
-        if (mp->ma_keys->dk_usable < other->ma_used) {
-            if (frozendict_resize(mp, mp->ma_used + other->ma_used)) {
-               return -1;
-            }
-        }
         PyDictKeyEntry* ep0 = DK_ENTRIES(other->ma_keys);
         PyDictKeyEntry* entry;
         PyObject* key;
         PyObject* value;
         Py_hash_t hash;
-        
-        const int is_other_split = other->ma_values != NULL;
         
         for (Py_ssize_t i = 0, n = other->ma_keys->dk_nentries; i < n; i++) {
             entry = &ep0[i];
@@ -3645,6 +3594,79 @@ PyDict_Copy(PyObject *o)
     Py_DECREF(copy);
     return NULL;
 }
+
+/* it does not work
+static PyObject* frozendict_set(PyObject* self, 
+                                PyObject *const *args, 
+                                Py_ssize_t nargs) {
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject* new_op = type->tp_alloc(type, 0);
+
+    if (new_op == NULL){
+        return NULL;
+    }
+
+    if (type == &PyFrozenDict_Type) {
+        _PyObject_GC_UNTRACK(new_op);
+    }
+
+    const PyDictObject* mp = (PyDictObject*) self;
+    const Py_ssize_t numentries = mp->ma_used;
+
+    if (frozendict_resize((PyDictObject*) new_op, numentries + 1)) {
+        Py_DECREF(new_op);
+        return NULL;
+    }
+
+    PyFrozenDictObject* new_mp = (PyFrozenDictObject*) new_op;
+    new_mp->ma_used = 0;
+    new_mp->_hash = -1;
+    new_mp->_hash_calculated = 0;
+
+    PyDictKeysObject* new_keys = new_mp->ma_keys;
+    PyObject** newvalues = new_mp->ma_values;
+    const PyDictKeysObject* oldkeys = mp->ma_keys;
+    PyDictKeyEntry* newentries = DK_ENTRIES(new_keys);
+    PyObject** oldvalues = mp->ma_values;
+    
+    new_keys->dk_lookup = oldkeys->dk_lookup;
+    
+    memcpy(
+        newentries, 
+        DK_ENTRIES(oldkeys), 
+        numentries * sizeof(PyDictKeyEntry)
+    );
+    
+    memcpy(newvalues, oldvalues, numentries * sizeof(PyObject*));
+    
+    for (Py_ssize_t i=0; i<numentries; i++) {
+        Py_INCREF(newentries[i].me_key);
+        Py_INCREF(newvalues[i]);
+    }
+    
+    build_indices(new_keys, newentries, numentries);
+    new_keys->dk_usable -= numentries;
+    new_keys->dk_nentries = numentries;
+    
+    PyObject* set_key = args[0];
+
+    if (frozendict_setitem(new_op, set_key, args[1], 0)) {
+        Py_DECREF(new_op);
+        return NULL;
+    }
+
+    new_mp->ma_version_tag = DICT_NEXT_VERSION();
+
+    if (
+        oldkeys->dk_lookup == frozendict_lookup_unicode && 
+        ! PyUnicode_CheckExact(set_key)
+    ) {
+        new_keys->dk_lookup = frozendict_lookup;
+    }
+
+    return new_op;
+}
+*/
 
 static PyObject* frozendict_set(PyObject* self, 
                                 PyObject *const *args, 
