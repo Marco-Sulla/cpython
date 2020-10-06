@@ -603,41 +603,6 @@ Pdata_poplist(Pdata *self, Py_ssize_t start)
     return list;
 }
 
-static PyObject *
-Pdata_poplist2(Pdata *self, Py_ssize_t start)
-{
-    PyObject *list;
-    PyObject *subtuple;
-    Py_ssize_t len, i, j;
-
-    if (start < self->fence) {
-        Pdata_stack_underflow(self);
-        return NULL;
-    }
-    
-    len = (Py_SIZE(self) - start) >> 1;
-    list = PyList_New(len);
-    
-    if (list == NULL) {
-        return NULL;
-    }
-    
-    for (i = start, j = 0; j < len; i+=2, j++) {
-        subtuple = PyTuple_New(2);
-        
-        if (subtuple == NULL) {
-            return NULL;
-        }
-        
-        PyTuple_SET_ITEM(subtuple, 0, self->data[i]);
-        PyTuple_SET_ITEM(subtuple, 1, self->data[i+1]);
-        PyList_SET_ITEM(list, j, subtuple);
-    }
-
-    Py_SIZE(self) = start;
-    return list;
-}
-
 typedef struct {
     PyObject *me_key;
     Py_ssize_t me_value;
@@ -5884,22 +5849,38 @@ load_dict(UnpicklerObject *self)
 static int
 load_frozendict(UnpicklerObject *self)
 {
-    PyObject *items;
-    PyObject *frozendict;
-    Py_ssize_t i;
+    PyObject *dict, *key, *value;
+    Py_ssize_t i, j, k;
 
     if ((i = marker(self)) < 0)
         return -1;
+    j = Py_SIZE(self->stack);
     
-    items = Pdata_poplist2(self->stack, i);
-    if (items == NULL)
+    _PyDict_Use_empty_frozendict(0);
+    dict = PyFrozenDict_New(NULL, NULL);
+    _PyDict_Use_empty_frozendict(1);
+    
+    if (dict == NULL)
         return -1;
-
-    frozendict = PyFrozenDict_New(items, NULL);
-    if (frozendict == NULL)
+    
+    if ((j - i) % 2 != 0) {
+        PickleState *st = _Pickle_GetGlobalState();
+        PyErr_SetString(st->UnpicklingError, "odd number of items for DICT");
+        Py_DECREF(dict);
         return -1;
+    }
 
-    PDATA_PUSH(self->stack, frozendict, -1);
+    for (k = i + 1; k < j; k += 2) {
+        key = self->stack->data[k - 1];
+        value = self->stack->data[k];
+        if (_PyFrozendict_SetItem(dict, key, value, 0) < 0) {
+            Py_DECREF(dict);
+            return -1;
+        }
+    }
+    _PyFrozendict_UpdateLookup(dict);
+    Pdata_clear(self->stack, i);
+    PDATA_PUSH(self->stack, dict, -1);
     return 0;
 }
 

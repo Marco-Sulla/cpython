@@ -39,12 +39,6 @@ typedef struct {
     short _hash_calculated;
 } PyFrozenDictObject;
 
-typedef struct {
-    PyObject_HEAD
-    PyFrozenDictObject *di_dict;
-    Py_ssize_t di_pos;
-} frozendictiterobject;
-
 PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
                                        Py_hash_t hash);
 PyAPI_FUNC(PyObject *) _PyDict_GetItemIdWithError(PyObject *dp,
@@ -100,3 +94,9 @@ typedef struct {
 
 PyAPI_FUNC(PyObject *) _PyDictView_New(PyObject *, PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
+PyAPI_FUNC(void) _PyDict_Use_empty_frozendict(int boolean);
+PyAPI_FUNC(int)  _PyFrozendict_SetItem(PyObject *op, 
+                                       PyObject *key, 
+                                       PyObject *value, 
+                                       int empty);
+PyAPI_FUNC(void) _PyFrozendict_UpdateLookup(PyObject* op);

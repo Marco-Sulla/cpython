@@ -17,6 +17,12 @@ def fd_dict_2_raw():
 
 fd_dict_2 = pytest.fixture(fd_dict_2_raw)
 
+@pytest.fixture
+def generator_seq2(fd_dict):
+    seq2 = list(fd_dict.items())
+    seq2.append(("Sulla", "Mario"))
+    return (x for x in seq2)
+
 ################################################################################
 # frozendict fixtures
 
@@ -68,6 +74,9 @@ def test_constructor_kwargs(fd2, fd_dict_2):
 def test_constructor_self(fd):
     assert fd == frozendict(fd, Sulla="Marco")
     assert fd is frozendict(fd)
+
+def test_constructor_generator(fd, generator_seq2):
+    assert fd == frozendict(generator_seq2, Sulla="Marco")
 
 def test_normalget(fd):
     assert fd["Sulla"] == "Marco"
