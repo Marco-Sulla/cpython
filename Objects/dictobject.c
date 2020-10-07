@@ -2321,88 +2321,83 @@ frozendict_fromkeys_impl(PyObject *type, PyObject *iterable, PyObject *value)
     PyObject *d;
     int status;
     
-    use_empty_frozendict = 0;
-    d = _PyObject_CallNoArg(type);
-    use_empty_frozendict = 1;
+    d = _PyObject_CallNoArg((PyObject *)&PyFrozenDict_Type);
     if (d == NULL)
         return NULL;
+    
+    if (PyAnyDict_CheckExact(iterable)) {
+        PyDictObject *mp = (PyDictObject *)d;
+        PyObject *oldvalue;
+        Py_ssize_t pos = 0;
+        PyObject *key;
+        Py_hash_t hash;
 
-    if (PyAnyDict_CheckExact(d) && ((PyDictObject *)d)->ma_used == 0) {
-        if (PyAnyDict_CheckExact(iterable)) {
-            PyDictObject *mp = (PyDictObject *)d;
-            PyObject *oldvalue;
-            Py_ssize_t pos = 0;
-            PyObject *key;
-            Py_hash_t hash;
-
-            if (frozendict_resize(mp, PyDict_GET_SIZE(iterable))) {
-                Py_DECREF(d);
-                return NULL;
-            }
-
-            while (_PyDict_Next(iterable, &pos, &key, &oldvalue, &hash)) {
-                if (frozendict_insert(mp, key, hash, value, 0)) {
-                    Py_DECREF(d);
-                    return NULL;
-                }
-            }
-            frozendict_update_lookup(d);
-            return d;
+        if (frozendict_resize(mp, PyDict_GET_SIZE(iterable))) {
+            Py_DECREF(d);
+            return NULL;
         }
-        if (PyAnySet_CheckExact(iterable)) {
-            PyDictObject *mp = (PyDictObject *)d;
-            Py_ssize_t pos = 0;
-            PyObject *key;
-            Py_hash_t hash;
 
-            if (frozendict_resize(mp, PySet_GET_SIZE(iterable))) {
+        while (_PyDict_Next(iterable, &pos, &key, &oldvalue, &hash)) {
+            if (frozendict_insert(mp, key, hash, value, 0)) {
                 Py_DECREF(d);
                 return NULL;
             }
+        }
+        return d;
+    }
+    else if (PyAnySet_CheckExact(iterable)) {
+        PyDictObject *mp = (PyDictObject *)d;
+        Py_ssize_t pos = 0;
+        PyObject *key;
+        Py_hash_t hash;
 
-            while (_PySet_NextEntry(iterable, &pos, &key, &hash)) {
-                if (frozendict_insert(mp, key, hash, value, 0)) {
-                    Py_DECREF(d);
-                    return NULL;
-                }
+        if (frozendict_resize(mp, PySet_GET_SIZE(iterable))) {
+            Py_DECREF(d);
+            return NULL;
+        }
+
+        while (_PySet_NextEntry(iterable, &pos, &key, &hash)) {
+            if (frozendict_insert(mp, key, hash, value, 0)) {
+                Py_DECREF(d);
+                return NULL;
             }
-            frozendict_update_lookup(d);
-            return d;
         }
     }
+    else {
+        it = PyObject_GetIter(iterable);
+        if (it == NULL){
+            Py_DECREF(d);
+            return NULL;
+        }
 
-    it = PyObject_GetIter(iterable);
-    if (it == NULL){
+        while ((key = PyIter_Next(it)) != NULL) {
+            status = PyDict_SetItem(d, key, value);
+            Py_DECREF(key);
+            if (status < 0) {
+                Py_DECREF(it);
+                Py_DECREF(d);
+                return NULL;
+            }
+        }
+
+        Py_DECREF(it);
+        
+        if (PyErr_Occurred()) {
+            Py_DECREF(d);
+            return NULL;
+        }
+    }
+    
+    PyObject* args = PyTuple_New(1);
+
+    if (args == NULL) {
         Py_DECREF(d);
         return NULL;
     }
 
-    if (PyAnyDict_CheckExact(d)) {
-        while ((key = PyIter_Next(it)) != NULL) {
-            status = frozendict_setitem(d, key, value, 0);
-            Py_DECREF(key);
-            if (status < 0)
-                goto Fail;
-        }
-    } else {
-        while ((key = PyIter_Next(it)) != NULL) {
-            status = PyObject_SetItem(d, key, value);
-            Py_DECREF(key);
-            if (status < 0)
-                goto Fail;
-        }
-    }
-
-    if (PyErr_Occurred())
-        goto Fail;
-    Py_DECREF(it);
-    frozendict_update_lookup(d);
-    return d;
-
-Fail:
-    Py_DECREF(it);
-    Py_DECREF(d);
-    return NULL;
+    PyTuple_SET_ITEM(args, 0, d);
+    
+    return PyObject_Call(type, args, NULL);
 }
 
 static PyObject *
