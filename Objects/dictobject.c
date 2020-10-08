@@ -2371,7 +2371,7 @@ frozendict_fromkeys_impl(PyObject *type, PyObject *iterable, PyObject *value)
         }
 
         while ((key = PyIter_Next(it)) != NULL) {
-            status = PyDict_SetItem(d, key, value);
+            status = frozendict_setitem(d, key, value, 0);
             Py_DECREF(key);
             if (status < 0) {
                 Py_DECREF(it);
@@ -3022,7 +3022,7 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
                 Py_DECREF(key);
                 return -1;
             }
-            status = PyDict_SetItem(a, key, value);
+            status = frozendict_setitem(a, key, value, 0);
             Py_DECREF(key);
             Py_DECREF(value);
             if (status < 0) {
@@ -4651,7 +4651,7 @@ static PyObject* frozendict_new(PyTypeObject* type,
     PyObject* arg;
     PyObject* self = frozendict_new_barebone(type, args, kwds, &arg);
     
-    if (self == arg) {
+    if (self == arg && type == &PyFrozenDict_Type) {
         return self;
     }
 
@@ -4663,7 +4663,11 @@ static PyObject* frozendict_new(PyTypeObject* type,
     PyDictObject* mp = (PyDictObject*) self;
     
     // if frozendict is empty, return the empty singleton
-    if (use_empty_frozendict && mp->ma_used == 0) {
+    if (
+        mp->ma_used == 0 
+        && use_empty_frozendict 
+        && type == &PyFrozenDict_Type
+    ) {
         if (empty_frozendict == NULL) {
             empty_frozendict = self;
             mp->ma_version_tag = DICT_NEXT_VERSION();
@@ -4691,10 +4695,6 @@ PyObject* PyFrozenDict_New(PyObject* arg, PyObject* kwds) {
     PyTuple_SET_ITEM(args, 0, arg);
 
     return frozendict_new(&PyFrozenDict_Type, args, kwds);
-}
-
-static int frozendict_init(PyObject* self, PyObject* args, PyObject* kwds) {
-    return 0;
 }
 
 #define MINUSONE_HASH ((Py_hash_t) -1)
@@ -4836,7 +4836,7 @@ PyTypeObject PyFrozenDict_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    frozendict_init,                            /* tp_init */
+    0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     frozendict_new,                             /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
