@@ -1420,7 +1420,7 @@ dictresize(PyDictObject *mp, Py_ssize_t newsize)
 }
 
 static int frozendict_resize(PyDictObject* mp, Py_ssize_t minsize) {
-    const Py_ssize_t newsize = calculate_keysize(minsize);
+    const Py_ssize_t newsize = calculate_keysize(estimate_keysize(minsize));
     
     if (newsize <= 0) {
         PyErr_NoMemory();
@@ -1470,42 +1470,6 @@ static int frozendict_resize(PyDictObject* mp, Py_ssize_t minsize) {
     // do not decref the keys inside!
     dictkeys_decref(oldkeys, 0);
     free_values(oldvalues);
-    
-    mp->ma_keys = new_keys;
-    mp->ma_values = newvalues;
-    
-    return 0;
-}
-
-static int frozendict_resize_empty(PyDictObject* mp, Py_ssize_t minsize) {
-    const Py_ssize_t newsize = calculate_keysize(minsize);
-    
-    if (newsize <= 0) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    
-    assert(IS_POWER_OF_2(newsize));
-    assert(newsize >= PyDict_MINSIZE);
-
-    /* Allocate a new table. */
-    PyDictKeysObject* new_keys = new_keys_object(newsize);
-    
-    if (new_keys == NULL) {
-        return -1;
-    }
-    
-    // New table must be large enough.
-    assert(new_keys->dk_usable >= mp->ma_used);
-    
-    PyObject** newvalues = new_values(newsize);
-    
-    if (newvalues == NULL) {
-        dictkeys_decref(new_keys, 0);
-        return -1;
-    }
-    
-    new_keys->dk_lookup = frozendict_lookup;
     
     mp->ma_keys = new_keys;
     mp->ma_values = newvalues;
@@ -1874,7 +1838,6 @@ static int frozendict_setitem(PyObject *op,
             return -1;
         }
     }
-
     return frozendict_insert((PyDictObject*) op, key, hash, value, empty);
 }
 
@@ -3624,79 +3587,6 @@ PyDict_Copy(PyObject *o)
     return NULL;
 }
 
-/* it does not work
-static PyObject* frozendict_set(PyObject* self, 
-                                PyObject *const *args, 
-                                Py_ssize_t nargs) {
-    PyTypeObject* type = Py_TYPE(self);
-    PyObject* new_op = type->tp_alloc(type, 0);
-
-    if (new_op == NULL){
-        return NULL;
-    }
-
-    if (type == &PyFrozenDict_Type) {
-        _PyObject_GC_UNTRACK(new_op);
-    }
-
-    const PyDictObject* mp = (PyDictObject*) self;
-    const Py_ssize_t numentries = mp->ma_used;
-
-    if (frozendict_resize((PyDictObject*) new_op, numentries + 1)) {
-        Py_DECREF(new_op);
-        return NULL;
-    }
-
-    PyFrozenDictObject* new_mp = (PyFrozenDictObject*) new_op;
-    new_mp->ma_used = 0;
-    new_mp->_hash = -1;
-    new_mp->_hash_calculated = 0;
-
-    PyDictKeysObject* new_keys = new_mp->ma_keys;
-    PyObject** newvalues = new_mp->ma_values;
-    const PyDictKeysObject* oldkeys = mp->ma_keys;
-    PyDictKeyEntry* newentries = DK_ENTRIES(new_keys);
-    PyObject** oldvalues = mp->ma_values;
-    
-    new_keys->dk_lookup = oldkeys->dk_lookup;
-    
-    memcpy(
-        newentries, 
-        DK_ENTRIES(oldkeys), 
-        numentries * sizeof(PyDictKeyEntry)
-    );
-    
-    memcpy(newvalues, oldvalues, numentries * sizeof(PyObject*));
-    
-    for (Py_ssize_t i=0; i<numentries; i++) {
-        Py_INCREF(newentries[i].me_key);
-        Py_INCREF(newvalues[i]);
-    }
-    
-    build_indices(new_keys, newentries, numentries);
-    new_keys->dk_usable -= numentries;
-    new_keys->dk_nentries = numentries;
-    
-    PyObject* set_key = args[0];
-
-    if (frozendict_setitem(new_op, set_key, args[1], 0)) {
-        Py_DECREF(new_op);
-        return NULL;
-    }
-
-    new_mp->ma_version_tag = DICT_NEXT_VERSION();
-
-    if (
-        oldkeys->dk_lookup == frozendict_lookup_unicode && 
-        ! PyUnicode_CheckExact(set_key)
-    ) {
-        new_keys->dk_lookup = frozendict_lookup;
-    }
-
-    return new_op;
-}
-*/
-
 static PyObject* frozendict_set(PyObject* self, 
                                 PyObject *const *args, 
                                 Py_ssize_t nargs) {
@@ -3713,23 +3603,47 @@ static PyObject* frozendict_set(PyObject* self,
 
     const PyDictObject* mp = (PyDictObject*) self;
     const Py_ssize_t size = mp->ma_used;
+    const Py_ssize_t newsize = calculate_keysize(estimate_keysize(size + 1));
     
-    if (frozendict_resize_empty((PyDictObject*) new_op, size + 1)) {
+    if (newsize <= 0) {
+        Py_DECREF(new_op);
+        PyErr_NoMemory();
+        return NULL;
+    }
+    
+    assert(IS_POWER_OF_2(newsize));
+    assert(newsize >= PyDict_MINSIZE);
+
+    /* Allocate a new table. */
+    PyDictKeysObject* new_keys = new_keys_object(newsize);
+    
+    if (new_keys == NULL) {
         Py_DECREF(new_op);
         return NULL;
     }
-
+    
     PyFrozenDictObject* new_mp = (PyFrozenDictObject*) new_op;
+    
+    PyObject** newvalues = new_values(newsize);
+    
+    if (newvalues == NULL) {
+        Py_DECREF(new_op);
+        dictkeys_decref(new_keys, 0);
+        return NULL;
+    }
+    
+    const PyDictKeysObject* old_keys = mp->ma_keys;
+    new_keys->dk_lookup = old_keys->dk_lookup;
+    
+    new_mp->ma_keys = new_keys;
+    new_mp->ma_values = newvalues;
     new_mp->ma_used = 0;
     new_mp->_hash = -1;
     new_mp->_hash_calculated = 0;
 
-    PyDictKeysObject* new_keys = new_mp->ma_keys;
-    PyObject** new_values = new_mp->ma_values;
-
-    const PyDictKeysObject* old_keys = mp->ma_keys;
-    new_keys->dk_lookup = old_keys->dk_lookup;
-
+    // New table must be large enough.
+    assert(new_keys->dk_usable >= new_mp->ma_used);
+    
     PyObject* key;
     PyObject* value;
     Py_hash_t hash;
@@ -3752,7 +3666,7 @@ static PyObject* frozendict_set(PyObject* self,
         new_entry = &new_entries[i];
         new_entry->me_key = key;
         new_entry->me_hash = hash;
-        new_values[i] = value;
+        newvalues[i] = value;
     }
 
     new_mp->ma_used = size;
@@ -3760,12 +3674,12 @@ static PyObject* frozendict_set(PyObject* self,
     new_keys->dk_nentries = size;
 
     PyObject* set_key = args[0];
-
+    
     if (frozendict_setitem(new_op, set_key, args[1], 0)) {
         Py_DECREF(new_op);
         return NULL;
     }
-
+    
     new_mp->ma_version_tag = DICT_NEXT_VERSION();
 
     if (
@@ -3774,7 +3688,9 @@ static PyObject* frozendict_set(PyObject* self,
     ) {
         new_keys->dk_lookup = frozendict_lookup;
     }
-
+    
+    ASSERT_CONSISTENT(new_mp);
+    
     return new_op;
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-def main():
+def main(number):
     import timeit
     import uuid
     import immutables
@@ -26,23 +26,30 @@ def main():
         
         return sqrt(sigma2 / N)
     
-    def autorange(stmt, setup="pass", globals=None, ratio=1000, bench_time=10):
+    def autorange(stmt, setup="pass", globals=None, ratio=1000, bench_time=10, number=None):
         if setup == None:
             setup = "pass"
         
         t = timeit.Timer(stmt=stmt, setup=setup, globals=globals)
-        a = t.autorange()
+        break_immediately = False
         
-        num = a[0]
-        number = int(num / ratio)
+        if number == None:
+            a = t.autorange()
+            
+            num = a[0]
+            number = int(num / ratio)
+            
+            if number < 1:
+                number = 1
+            
+            repeat = int(num / number)
+            
+            if repeat < 1:
+                repeat = 1
         
-        if number < 1:
-            number = 1
-        
-        repeat = int(num / number)
-        
-        if repeat < 1:
+        else:
             repeat = 1
+            break_immediately = True
         
         results = []
         
@@ -55,7 +62,7 @@ def main():
         while 1:
             data_min.extend(t.repeat(number=number, repeat=repeat))
             
-            if time() - bench_start > bench_time:
+            if break_immediately or time() - bench_start > bench_time:
                 break
         
         data_min.sort()
@@ -84,7 +91,7 @@ def main():
         return str(uuid.uuid4())
     
     
-    dictionary_sizes = (42, )
+    dictionary_sizes = (4, 8, 1000)
     
     print_tpl = "Name: {name: <25} Size: {size: >4}; Keys: {keys: >3}; Type: {type: >10}; Time: {time:.2e}; Sigma: {sigma:.0e}"
     str_key = '12323f29-c31f-478c-9b15-e7acc5354df9'
@@ -126,6 +133,7 @@ def main():
                         stmt = benchmark["code"], 
                         setup = benchmark["setup"], 
                         globals = {"o": o, "getUuid": getUuid, "one_key": one_key},
+                        number = number,
                     )
 
                     print(print_tpl.format(
@@ -138,4 +146,23 @@ def main():
                     ))
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    number = None
+    argv = sys.argv
+    len_argv = len(argv)
+    max_positional_args = 1
+    max_len_argv = max_positional_args + 1
+    
+    if len_argv > max_len_argv:
+        raise ValueError(
+            ("{name} must not accept more than {nargs} positional " + 
+            "command-line parameters").format(name=__name__, nargs=max_positional_args)
+        )
+    
+    number_arg_pos = 1
+    
+    if len_argv == number_arg_pos + 1:
+        number = int(argv[number_arg_pos])
+    
+    main(number)
