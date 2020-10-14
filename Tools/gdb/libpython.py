@@ -91,6 +91,7 @@ Py_TPFLAGS_UNICODE_SUBCLASS  = (1 << 28)
 Py_TPFLAGS_DICT_SUBCLASS     = (1 << 29)
 Py_TPFLAGS_BASE_EXC_SUBCLASS = (1 << 30)
 Py_TPFLAGS_TYPE_SUBCLASS     = (1 << 31)
+Py_TPFLAGS_FROZENDICT_SUBCLASS = (1 << 32)
 
 
 MAX_OUTPUT_LEN=1024
@@ -388,6 +389,8 @@ class PyObjectPtr(object):
         if tp_flags & Py_TPFLAGS_UNICODE_SUBCLASS:
             return PyUnicodeObjectPtr
         if tp_flags & Py_TPFLAGS_DICT_SUBCLASS:
+            return PyDictObjectPtr
+        if tp_flags & Py_TPFLAGS_FROZENDICT_SUBCLASS:
             return PyDictObjectPtr
         if tp_flags & Py_TPFLAGS_BASE_EXC_SUBCLASS:
             return PyBaseExceptionObjectPtr

@@ -5182,6 +5182,8 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
         type->tp_flags |= Py_TPFLAGS_LIST_SUBCLASS;
     else if (PyType_IsSubtype(base, &PyDict_Type))
         type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
+    else if (PyType_IsSubtype(base, &PyFrozenDict_Type))
+        type->tp_flags |= Py_TPFLAGS_FROZENDICT_SUBCLASS;
 }
 
 static int

@@ -365,6 +365,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_DICT_SUBCLASS        (1UL << 29)
 #define Py_TPFLAGS_BASE_EXC_SUBCLASS    (1UL << 30)
 #define Py_TPFLAGS_TYPE_SUBCLASS        (1UL << 31)
+#define Py_TPFLAGS_FROZENDICT_SUBCLASS  (1UL << 32)
 
 #define Py_TPFLAGS_DEFAULT  ( \
                  Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | \

@@ -266,7 +266,7 @@ _PyDict_ClearFreeList(PyThreadState *tstate)
     struct _Py_dict_state *state = &tstate->interp->dict_state;
     while (state->numfree) {
         PyDictObject *op = state->free_list[--state->numfree];
-        assert(PyDict_CheckExact(op));
+        assert(PyAnyDict_CheckExact(op));
         PyObject_GC_Del(op);
     }
     while (state->keys_numfree) {
@@ -1668,7 +1668,7 @@ _PyDict_NewPresized(Py_ssize_t minused)
 PyObject *
 PyDict_GetItem(PyObject *op, PyObject *key)
 {
-    if (!PyDict_Check(op)) {
+    if (!PyAnyDict_Check(op)) {
         return NULL;
     }
     PyDictObject *mp = (PyDictObject *)op;
@@ -1719,7 +1719,7 @@ _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
     PyDictObject *mp = (PyDictObject *)op;
     PyObject *value;
 
-    if (!PyDict_Check(op)) {
+    if (!PyAnyDict_Check(op)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -1743,7 +1743,7 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
     PyDictObject*mp = (PyDictObject *)op;
     PyObject *value;
 
-    if (!PyDict_Check(op)) {
+    if (!PyAnyDict_Check(op)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -1862,7 +1862,7 @@ static int frozendict_setitem(PyObject *op,
                               int empty) {
     Py_hash_t hash;
 
-    assert(PyDict_Check(op));
+    assert(PyFrozenDict_Check(op));
     assert(key);
     assert(value);
 
@@ -2085,7 +2085,7 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
     PyDictKeyEntry *entry_ptr;
     PyObject *value;
 
-    if (!PyDict_Check(op))
+    if (!PyAnyDict_Check(op))
         return 0;
     mp = (PyDictObject *)op;
     i = *ppos;
@@ -2917,7 +2917,7 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
     PyDictObject* mp = (PyDictObject*) a;
     
     if (
-        PyDict_Check(b) && 
+        PyAnyDict_Check(b) && 
         (
             Py_TYPE(b)->tp_iter == (getiterfunc)dict_iter ||
             Py_TYPE(b)->tp_iter == (getiterfunc)frozendict_iter
@@ -3075,7 +3075,7 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
 
 static int frozendict_merge_from_seq2(PyObject* d, PyObject* seq2) {
     assert(d != NULL);
-    assert(PyDict_Check(d));
+    assert(PyFrozenDict_Check(d));
     assert(seq2 != NULL);
 
     PyObject* it = PyObject_GetIter(seq2);
@@ -3781,7 +3781,7 @@ static PyObject* frozendict_set(PyObject* self,
 Py_ssize_t
 PyDict_Size(PyObject *mp)
 {
-    if (mp == NULL || !PyDict_Check(mp)) {
+    if (mp == NULL || !PyAnyDict_Check(mp)) {
         PyErr_BadInternalCall();
         return -1;
     }
@@ -3791,7 +3791,7 @@ PyDict_Size(PyObject *mp)
 PyObject *
 PyDict_Keys(PyObject *mp)
 {
-    if (mp == NULL || !PyDict_Check(mp)) {
+    if (mp == NULL || !PyAnyDict_Check(mp)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -3801,7 +3801,7 @@ PyDict_Keys(PyObject *mp)
 PyObject *
 PyDict_Values(PyObject *mp)
 {
-    if (mp == NULL || !PyDict_Check(mp)) {
+    if (mp == NULL || !PyAnyDict_Check(mp)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -3811,7 +3811,7 @@ PyDict_Values(PyObject *mp)
 PyObject *
 PyDict_Items(PyObject *mp)
 {
-    if (mp == NULL || !PyDict_Check(mp)) {
+    if (mp == NULL || !PyAnyDict_Check(mp)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -3927,7 +3927,7 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
     int cmp;
     PyObject *res;
 
-    if (!PyDict_Check(v) || !PyDict_Check(w)) {
+    if (!PyAnyDict_Check(v) || !PyAnyDict_Check(w)) {
         res = Py_NotImplemented;
     }
     else if (op == Py_EQ || op == Py_NE) {
@@ -3946,7 +3946,7 @@ static PyObject* frozendict_richcompare(PyObject *v, PyObject *w, int op) {
     int cmp;
     PyObject *res;
 
-    if (!PyDict_Check(v) || !PyDict_Check(w)) {
+    if (!PyAnyDict_Check(v) || !PyAnyDict_Check(w)) {
         res = Py_NotImplemented;
     }
     else if (op == Py_EQ || op == Py_NE) {
@@ -4357,6 +4357,7 @@ PyDoc_STRVAR(copy__doc__,
 
 /* Forward */
 static PyObject *dictkeys_new(PyObject *, PyObject *);
+static PyObject *frozendictkeys_new(PyObject *, PyObject *);
 static PyObject *dictitems_new(PyObject *, PyObject *);
 static PyObject *dictvalues_new(PyObject *, PyObject *);
 
@@ -4408,7 +4409,7 @@ static PyMethodDef frozen_mapp_methods[] = {
     {"__sizeof__",      (PyCFunction)(void(*)(void))dict_sizeof,       METH_NOARGS,
      sizeof__doc__},
     DICT_GET_METHODDEF
-    {"keys",            dictkeys_new,                   METH_NOARGS,
+    {"keys",            frozendictkeys_new,             METH_NOARGS,
     keys__doc__},
     {"items",           dictitems_new,                  METH_NOARGS,
     items__doc__},
@@ -4858,7 +4859,7 @@ PyTypeObject PyFrozenDict_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE | 
-        Py_TPFLAGS_DICT_SUBCLASS,               /* tp_flags */
+        Py_TPFLAGS_FROZENDICT_SUBCLASS,         /* tp_flags */
     frozendict_doc,                             /* tp_doc */
     dict_traverse,                              /* tp_traverse */
     0,                                          /* tp_clear */
@@ -5204,7 +5205,7 @@ dictiter_iternextvalue(dictiterobject *di)
 
     if (d == NULL)
         return NULL;
-    assert (PyDict_Check(d));
+    assert (PyAnyDict_Check(d));
 
     if (di->di_used != d->ma_used) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -5291,7 +5292,7 @@ dictiter_iternextitem(dictiterobject *di)
 
     if (d == NULL)
         return NULL;
-    assert (PyDict_Check(d));
+    assert (PyAnyDict_Check(d));
 
     if (di->di_used != d->ma_used) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -5400,7 +5401,7 @@ dictreviter_iternext(dictiterobject *di)
     if (d == NULL) {
         return NULL;
     }
-    assert (PyDict_Check(d));
+    assert (PyAnyDict_Check(d));
 
     if (di->di_used != d->ma_used) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -5499,7 +5500,7 @@ static PyObject *
 dict___reversed___impl(PyDictObject *self)
 /*[clinic end generated code: output=e674483336d1ed51 input=23210ef3477d8c4d]*/
 {
-    assert (PyDict_Check(self));
+    assert (PyAnyDict_Check(self));
     return dictiter_new(self, &PyDictRevIterKey_Type);
 }
 
@@ -5582,7 +5583,7 @@ _PyDictView_New(PyObject *dict, PyTypeObject *type)
         PyErr_BadInternalCall();
         return NULL;
     }
-    if (!PyDict_Check(dict)) {
+    if (!PyAnyDict_Check(dict)) {
         /* XXX Get rid of this restriction later */
         PyErr_Format(PyExc_TypeError,
                      "%s() requires a dict argument, not '%s'",
@@ -5740,6 +5741,15 @@ dictkeys_iter(_PyDictViewObject *dv)
         Py_RETURN_NONE;
     }
     return dictiter_new(dv->dv_dict, &PyDictIterKey_Type);
+}
+
+static PyObject *
+frozendictkeys_iter(_PyDictViewObject *dv)
+{
+    if (dv->dv_dict == NULL) {
+        Py_RETURN_NONE;
+    }
+    return dictiter_new(dv->dv_dict, &PyFrozenDictIterKey_Type);
 }
 
 static int
@@ -6130,10 +6140,49 @@ PyTypeObject PyDictKeys_Type = {
     .tp_getset = dictview_getset,
 };
 
+PyTypeObject PyFrozenDictKeys_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "dict_keys",                                /* tp_name */
+    sizeof(_PyDictViewObject),                  /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)dictview_dealloc,               /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_as_async */
+    (reprfunc)dictview_repr,                    /* tp_repr */
+    &dictviews_as_number,                       /* tp_as_number */
+    &dictkeys_as_sequence,                      /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)dictview_traverse,            /* tp_traverse */
+    0,                                          /* tp_clear */
+    dictview_richcompare,                       /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    (getiterfunc)frozendictkeys_iter,                 /* tp_iter */
+    0,                                          /* tp_iternext */
+    dictkeys_methods,                           /* tp_methods */
+    .tp_getset = dictview_getset,
+};
+
 static PyObject *
 dictkeys_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 {
     return _PyDictView_New(dict, &PyDictKeys_Type);
+}
+
+static PyObject *
+frozendictkeys_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
+{
+    return _PyDictView_New(dict, &PyFrozenDictKeys_Type);
 }
 
 static PyObject *
