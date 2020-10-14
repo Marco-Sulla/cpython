@@ -1513,10 +1513,6 @@ static int frozendict_resize_empty(PyDictObject* mp, Py_ssize_t minsize) {
     return 0;
 }
 
-static int frozendict_insertion_resize(PyDictObject *mp) {
-    return frozendict_resize(mp, GROWTH_RATE(mp));
-}
-
 static int frozendict_insert(PyDictObject *mp, 
                              PyObject *key, 
                              const Py_hash_t hash, 
@@ -1547,12 +1543,13 @@ static int frozendict_insert(PyDictObject *mp,
         
         if (mp->ma_keys->dk_usable <= 0) {
             /* Need to resize. */
-            if (frozendict_insertion_resize(mp) < 0) {
+            if (frozendict_resize(mp, GROWTH_RATE(mp))) {
                 Py_DECREF(value);
                 Py_DECREF(key);
                 return -1;
             }
             
+            // resize changes keys
             keys = mp->ma_keys;
         }
         
@@ -4557,7 +4554,9 @@ static PyObject* frozendict_new_barebone(PyTypeObject* type,
     if (args != NULL && ! PyArg_UnpackTuple(args, __func__, 0, 1, &arg)) {
         return NULL;
     }
-
+    
+    *argo = arg;
+    
     const int arg_is_frozendict = (arg != NULL && PyFrozenDict_CheckExact(arg));
     const int kwds_size = ((kwds != NULL) 
         ? ((PyDictObject*) kwds)->ma_used 
