@@ -1096,6 +1096,37 @@ _PyDict_HasOnlyStringKeys(PyObject *dict)
     return 1;
 }
 
+static PyDictKeysObject *
+frozendict_clone(const PyDictObject *orig)
+{
+    assert(PyAnyDict_Check(orig));
+    assert(
+        Py_TYPE(orig)->tp_iter == (getiterfunc)dict_iter
+        || Py_TYPE(orig)->tp_iter == (getiterfunc)frozendict_iter
+    );
+
+    PyDictKeysObject* oldkeys = orig->ma_keys;
+    Py_ssize_t keys_size = _PyDict_KeysSize(oldkeys);
+    PyDictKeysObject *keys = PyObject_Malloc(keys_size);
+    if (keys == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    memcpy(keys, oldkeys, keys_size);
+    
+    if (keys->dk_lookup == lookdict_unicode_nodummy) {
+        keys->dk_lookup = frozendict_lookup_unicode;
+    }
+    else if (keys->dk_lookup == lookdict || keys->dk_lookup == lookdict_split) {
+        keys->dk_lookup = frozendict_lookup;
+    }
+
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal++;
+#endif
+    return keys;
+}
+
 #define MAINTAIN_TRACKING(mp, key, value) \
     do { \
         if (!_PyObject_GC_IS_TRACKED(mp)) { \
@@ -2894,9 +2925,7 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
             return 0;
         }
         
-        const int is_other_split = other->ma_values != NULL;
-        
-        
+        const int is_other_combined = other->ma_values == NULL;
         
         /* Do one big resize at the start, rather than
          * incrementally resizing as we insert new items.  Expect
@@ -2908,40 +2937,53 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
             }
         }
         
-        /* it does not work
-        if (empty && numentries == other->ma_keys->dk_nentries) {
-            // clone the dict
-            PyDictKeysObject* new_keys = mp->ma_keys;
-            PyObject** newvalues = mp->ma_values;
-            const PyDictKeysObject* oldkeys = other->ma_keys;
-            PyDictKeyEntry* newentries = DK_ENTRIES(new_keys);
+        PyDictKeysObject* oldkeys = other->ma_keys;
+        
+        if (empty && numentries == oldkeys->dk_nentries) {
+            PyDictKeysObject *keys = frozendict_clone(other);
+            if (keys == NULL) {
+                return -1;
+            }
+
+            dictkeys_decref(mp->ma_keys, 0);
+            mp->ma_keys = keys;
+            
+            PyObject** newvalues = new_values(numentries);
+            if (newvalues == NULL) {
+                dictkeys_decref(keys, 1);
+                return -1;
+            }
+            
+            if (! is_other_combined) {
+                memcpy(newvalues, other->ma_values, numentries * sizeof(PyObject*));
+            }
+            
             PyDictKeyEntry* oldentries = DK_ENTRIES(oldkeys);
-            PyObject** oldvalues = other->ma_values;
+            PyDictKeyEntry* newentries = DK_ENTRIES(mp->ma_keys);
             
-            new_keys->dk_lookup = oldkeys->dk_lookup;
-            
-            memcpy(
-                newentries, 
-                oldentries, 
-                numentries * sizeof(PyDictKeyEntry)
-            );
-            
-            if (is_other_split) {
-                memcpy(newvalues, oldvalues, numentries * sizeof(PyObject*));
-            }
-            
-            for (Py_ssize_t i=0; i<numentries; i++) {
-                Py_INCREF(newentries[i].me_key);
-                if (! is_other_split) {
-                    newvalues[i] = oldentries[i].me_value;
-                }
+            if (is_other_combined) {
+                PyObject* value;
                 
-                Py_INCREF(newvalues[i]);
+                for (Py_ssize_t i=0; i<numentries; i++) {
+                    Py_INCREF(newentries[i].me_key);
+                    value = oldentries[i].me_value;
+                    Py_INCREF(value);
+                    Py_INCREF(value);
+                    newvalues[i] = value;
+                }
+            }
+            else {
+                for (Py_ssize_t i=0; i<numentries; i++) {
+                    Py_INCREF(newentries[i].me_key);
+                    Py_INCREF(newvalues[i]);
+                    Py_INCREF(newvalues[i]);
+                }
             }
             
-            build_indices(new_keys, newentries, numentries);
-            new_keys->dk_usable -= numentries;
-            new_keys->dk_nentries = numentries;
+            PyObject** oldvalues = mp->ma_values;
+            mp->ma_values = newvalues;
+            free_values(oldvalues);
+
             mp->ma_used = numentries;
             mp->ma_version_tag = DICT_NEXT_VERSION();
             ASSERT_CONSISTENT(mp);
@@ -2952,27 +2994,48 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
             
             return 0;
         }
-        */
         
-        PyDictKeyEntry* ep0 = DK_ENTRIES(other->ma_keys);
+        PyDictKeyEntry* ep0 = DK_ENTRIES(oldkeys);
         PyDictKeyEntry* entry;
         PyObject* key;
         PyObject* value;
         Py_hash_t hash;
         
-        for (Py_ssize_t i = 0, n = other->ma_keys->dk_nentries; i < n; i++) {
-            entry = &ep0[i];
-            key = entry->me_key;
-            hash = entry->me_hash;
-            
-            if (is_other_split) {
-                value = other->ma_values[i];
-            }
-            else {
+        if (is_other_combined) {
+            for (Py_ssize_t i = 0, n = oldkeys->dk_nentries; i < n; i++) {
+                entry = &ep0[i];
+                key = entry->me_key;
+                hash = entry->me_hash;
+                
                 value = entry->me_value;
+                
+                if (value != NULL) {
+                    Py_INCREF(key);
+                    Py_INCREF(value);
+                    int err = frozendict_insert(mp, key, hash, value, empty);
+                    Py_DECREF(value);
+                    Py_DECREF(key);
+                    
+                    if (err != 0) {
+                        return -1;
+                    }
+                    
+                    if (n != other->ma_keys->dk_nentries) {
+                        PyErr_SetString(PyExc_RuntimeError,
+                                        "dict mutated during update");
+                        return -1;
+                    }
+                }
             }
-            
-            if (value != NULL) {
+        }
+        else {
+            for (Py_ssize_t i = 0, n = oldkeys->dk_nentries; i < n; i++) {
+                entry = &ep0[i];
+                key = entry->me_key;
+                hash = entry->me_hash;
+                
+                value = other->ma_values[i];
+                
                 Py_INCREF(key);
                 Py_INCREF(value);
                 int err = frozendict_insert(mp, key, hash, value, empty);
@@ -2983,7 +3046,6 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
                     return -1;
                 }
                 
-                // enough?
                 if (n != other->ma_keys->dk_nentries) {
                     PyErr_SetString(PyExc_RuntimeError,
                                     "dict mutated during update");
