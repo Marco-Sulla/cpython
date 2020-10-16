@@ -3665,7 +3665,8 @@ static PyObject* frozendict_set(PyObject* self,
 
     const PyDictObject* mp = (PyDictObject*) self;
     const Py_ssize_t size = mp->ma_used;
-    const Py_ssize_t newsize = calculate_keysize(estimate_keysize(size + 1));
+    const Py_ssize_t sizepp = size + 1;
+    const Py_ssize_t newsize = calculate_keysize(estimate_keysize(sizepp));
     
     if (newsize <= 0) {
         Py_DECREF(new_op);
@@ -3684,9 +3685,7 @@ static PyObject* frozendict_set(PyObject* self,
         return NULL;
     }
     
-    PyFrozenDictObject* new_mp = (PyFrozenDictObject*) new_op;
-    
-    PyObject** newvalues = new_values(newsize);
+    PyObject** newvalues = new_values(sizepp);
     
     if (newvalues == NULL) {
         Py_DECREF(new_op);
@@ -3694,46 +3693,35 @@ static PyObject* frozendict_set(PyObject* self,
         return NULL;
     }
     
-    const PyDictKeysObject* old_keys = mp->ma_keys;
-    new_keys->dk_lookup = old_keys->dk_lookup;
+    PyDictKeysObject* old_keys = mp->ma_keys;
     
-    new_mp->ma_keys = new_keys;
-    new_mp->ma_values = newvalues;
-    new_mp->ma_used = 0;
-    new_mp->_hash = -1;
-    new_mp->_hash_calculated = 0;
-
+    PyFrozenDictObject* new_mp = (PyFrozenDictObject*) new_op;
+    
     // New table must be large enough.
     assert(new_keys->dk_usable >= new_mp->ma_used);
     
-    PyObject* key;
-    PyObject* value;
-    Py_hash_t hash;
-    Py_ssize_t hashpos;
-    PyObject** old_values = mp->ma_values;
-    PyDictKeyEntry* old_entries = DK_ENTRIES(old_keys);
-    PyDictKeyEntry* new_entries = DK_ENTRIES(new_keys);
-    PyDictKeyEntry* old_entry;
-    PyDictKeyEntry* new_entry;
-
-    for (Py_ssize_t i = 0; i < size; i++) {
-        old_entry = &old_entries[i];
-        hash = old_entry->me_hash;
-        key = old_entry->me_key;
-        value = old_values[i];
-        Py_INCREF(key);
-        Py_INCREF(value);
-        hashpos = find_empty_slot(new_keys, hash);
-        dictkeys_set_index(new_keys, hashpos, i);
-        new_entry = &new_entries[i];
-        new_entry->me_key = key;
-        new_entry->me_hash = hash;
-        newvalues[i] = value;
+    Py_ssize_t keys_size = _PyDict_KeysSize(old_keys);
+    memcpy(new_keys, old_keys, keys_size);
+    memcpy(newvalues, mp->ma_values, size * sizeof(PyObject*));
+    
+    PyDictKeyEntry* newentries = DK_ENTRIES(new_keys);
+    
+    for (Py_ssize_t i=0; i<size; i++) {
+        Py_INCREF(newentries[i].me_key);
+        Py_INCREF(newvalues[i]);
+        Py_INCREF(newvalues[i]);
     }
-
+    
+    if (_PyObject_GC_IS_TRACKED(mp) && !_PyObject_GC_IS_TRACKED(new_mp)) {
+        _PyObject_GC_TRACK(new_mp);
+    }
+    
+    new_mp->ma_keys = new_keys;
+    new_mp->ma_values = newvalues;
     new_mp->ma_used = size;
-    new_keys->dk_usable -= size;
-    new_keys->dk_nentries = size;
+    new_mp->_hash = -1;
+    new_mp->_hash_calculated = 0;
+    new_mp->ma_version_tag = DICT_NEXT_VERSION();
 
     PyObject* set_key = args[0];
     
@@ -3741,8 +3729,6 @@ static PyObject* frozendict_set(PyObject* self,
         Py_DECREF(new_op);
         return NULL;
     }
-    
-    new_mp->ma_version_tag = DICT_NEXT_VERSION();
 
     if (
         old_keys->dk_lookup == frozendict_lookup_unicode && 
