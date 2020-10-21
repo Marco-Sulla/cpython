@@ -2339,7 +2339,9 @@ frozendict_fromkeys_impl(PyObject *type, PyObject *iterable, PyObject *value)
     PyObject *d;
     int status;
     
+    use_empty_frozendict = 0;
     d = _PyObject_CallNoArg((PyObject *)&PyFrozenDict_Type);
+    use_empty_frozendict = 1;
     if (d == NULL)
         return NULL;
     
@@ -3563,7 +3565,7 @@ PyDict_Copy(PyObject *o)
     PyDictObject *mp;
     Py_ssize_t i, n;
 
-    if (o == NULL || !PyDict_Check(o)) {
+    if (o == NULL || !PyAnyDict_Check(o)) {
         PyErr_BadInternalCall();
         return NULL;
     }
