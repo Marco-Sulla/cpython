@@ -1154,14 +1154,20 @@ Fail:
 }
 
 // Same to insertdict but specialized for inserting without resizing and for 
-// dict that are populated in a loop and was empty before (see the empty arg).
+// dict that are populated in a loop and was empty before (see the not_empty 
+// arg).
 // Note that resizing must be done before calling this function. If not 
 // possible, use insertdict(). Furthermore, ma_version_tag is left unchanged, 
 // you have to change it after calling this function (probably at the end of 
 // a loop)
 static int
-insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value, int empty)
-{
+insertdict_init(
+    PyDictObject *mp, 
+    PyObject *key, 
+    Py_hash_t hash, 
+    PyObject *value, 
+    int not_empty
+) {
     PyObject *old_value = NULL;
     PyDictKeyEntry *ep;
     PyDictKeysObject *keys = mp->ma_keys;
@@ -1171,17 +1177,17 @@ insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value
     Py_INCREF(value);
     MAINTAIN_TRACKING(mp, key, value);
 
-    if (! empty) {
+    if (not_empty) {
         ix = keys->dk_lookup(mp, key, hash, &old_value);
         if (ix == DKIX_ERROR)
             goto Fail;
 
         assert(PyUnicode_CheckExact(key) || keys->dk_lookup == lookdict);
 
-        empty = (ix == DKIX_EMPTY);
+        not_empty = (ix != DKIX_EMPTY);
     }
     
-    if (empty) {
+    if (! not_empty) {
         /* Insert into new slot. */
         assert(old_value == NULL);
         const Py_ssize_t hashpos = find_empty_slot(keys, hash);
@@ -1664,7 +1670,7 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
 
 // See insertdict_init()
 static int
-dict_set_item_init(PyObject *op, PyObject *key, PyObject *value, int empty)
+dict_set_item_init(PyObject *op, PyObject *key, PyObject *value, int not_empty)
 {
     Py_hash_t hash;
     assert(PyDict_Check(op));
@@ -1679,7 +1685,7 @@ dict_set_item_init(PyObject *op, PyObject *key, PyObject *value, int empty)
             return -1;
     }
 
-    return insertdict_init(mp, key, hash, value, empty);
+    return insertdict_init(mp, key, hash, value, not_empty);
 }
 
 int
@@ -3544,15 +3550,12 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    int empty = 1;
-
     if (nargs == 1) {
         if (dict_update_arg(self, args[0]) < 0) {
             Py_DECREF(self);
             return NULL;
         }
 
-        empty = 0;
         args++;
     }
 
@@ -3569,7 +3572,7 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
         }
 
         for (Py_ssize_t i = 0; i < kw_size; i++) {
-            if (dict_set_item_init(self, PyTuple_GET_ITEM(kwnames, i), args[i], empty) < 0) {
+            if (dict_set_item_init(self, PyTuple_GET_ITEM(kwnames, i), args[i], nargs) < 0) {
                 Py_DECREF(self);
                 return NULL;
             }
