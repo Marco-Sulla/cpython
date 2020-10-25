@@ -3188,20 +3188,6 @@ static int frozendict_update_arg(PyObject *self,
                                  PyObject *arg, 
                                  const int empty) {
     if (PyAnyDict_CheckExact(arg)) {
-        PyDictKeysObject* keys = ((PyDictObject*) self)->ma_keys;
-        
-        if (empty) {
-            if (dict_has_only_unicode_keys_exact((PyDictObject*) arg)) {
-                keys->dk_lookup = frozendict_lookup_unicode;
-            }
-        }
-        else if (
-            keys->dk_lookup == frozendict_lookup_unicode
-            && ! dict_has_only_unicode_keys_exact((PyDictObject*) arg)
-        ) {
-            keys->dk_lookup = frozendict_lookup;
-        }
-        
         return frozendict_merge(self, arg, empty);
     }
     _Py_IDENTIFIER(keys);
