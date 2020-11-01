@@ -141,7 +141,7 @@ do_mkdict(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int 
     }
     /* Note that we can't bail immediately on error as this will leak
        refcounts on any 'N' arguments. */
-    if ((d = PyDict_New()) == NULL) {
+    if ((d = PyDict_New()) == NULL || _PyDict_Resize(d, n)) {
         do_ignore(p_format, p_va, endchar, n, flags);
         return NULL;
     }
@@ -155,7 +155,7 @@ do_mkdict(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int 
             return NULL;
         }
         v = do_mkvalue(p_format, p_va, flags);
-        if (v == NULL || PyDict_SetItem(d, k, v) < 0) {
+        if (v == NULL || _PyDict_SetItemInit(d, k, v, 0) < 0) {
             do_ignore(p_format, p_va, endchar, n - i - 2, flags);
             Py_DECREF(k);
             Py_XDECREF(v);
@@ -173,6 +173,7 @@ do_mkdict(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int 
     }
     if (endchar)
         ++*p_format;
+    _PyDict_NextVersion(d);
     return d;
 }
 

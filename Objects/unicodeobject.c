@@ -8521,16 +8521,21 @@ PyUnicode_BuildEncodingMap(PyObject* string)
         PyObject *key, *value;
         if (!result)
             return NULL;
+        if (_PyDict_Resize(result, length)) {
+            Py_DECREF(result);
+            return NULL;
+        }
         for (i = 0; i < length; i++) {
             key = PyLong_FromLong(PyUnicode_READ(kind, data, i));
             value = PyLong_FromLong(i);
             if (!key || !value)
                 goto failed1;
-            if (PyDict_SetItem(result, key, value) == -1)
+            if (_PyDict_SetItemInit(result, key, value, 0) == -1)
                 goto failed1;
             Py_DECREF(key);
             Py_DECREF(value);
         }
+        _PyDict_NextVersion(result);
         return result;
       failed1:
         Py_XDECREF(key);
@@ -13647,6 +13652,9 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
         y_kind = PyUnicode_KIND(y);
         x_data = PyUnicode_DATA(x);
         y_data = PyUnicode_DATA(y);
+        Py_ssize_t length = PyUnicode_GET_LENGTH(x);
+        if (z != NULL) length += PyUnicode_GET_LENGTH(z);
+        if (_PyDict_Resize(new, length)) goto err;
         for (i = 0; i < PyUnicode_GET_LENGTH(x); i++) {
             key = PyLong_FromLong(PyUnicode_READ(x_kind, x_data, i));
             if (!key)
@@ -13656,7 +13664,7 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
                 Py_DECREF(key);
                 goto err;
             }
-            res = PyDict_SetItem(new, key, value);
+            res = _PyDict_SetItemInit(new, key, value, 0);
             Py_DECREF(key);
             Py_DECREF(value);
             if (res < 0)
@@ -13670,12 +13678,13 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
                 key = PyLong_FromLong(PyUnicode_READ(z_kind, z_data, i));
                 if (!key)
                     goto err;
-                res = PyDict_SetItem(new, key, Py_None);
+                res = _PyDict_SetItemInit(new, key, Py_None, 1);
                 Py_DECREF(key);
                 if (res < 0)
                     goto err;
             }
         }
+    _PyDict_NextVersion(new);
     } else {
         int kind;
         const void *data;

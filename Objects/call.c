@@ -913,20 +913,24 @@ _PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
 
     assert(kwnames != NULL);
     nkwargs = PyTuple_GET_SIZE(kwnames);
-    kwdict = _PyDict_NewPresized(nkwargs);
+    kwdict = PyDict_New();
     if (kwdict == NULL) {
         return NULL;
     }
-
+    if (_PyDict_Resize(kwdict, nkwargs)) {
+        Py_DECREF(kwdict);
+        return NULL;
+    }
     for (i = 0; i < nkwargs; i++) {
         PyObject *key = PyTuple_GET_ITEM(kwnames, i);
         PyObject *value = *values++;
         /* If key already exists, replace it with the new value */
-        if (PyDict_SetItem(kwdict, key, value)) {
+        if (_PyDict_SetItemInit(kwdict, key, value, 0)) {
             Py_DECREF(kwdict);
             return NULL;
         }
     }
+    _PyDict_NextVersion(kwdict);
     return kwdict;
 }
 

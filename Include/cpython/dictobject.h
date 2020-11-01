@@ -82,3 +82,7 @@ typedef struct {
 
 PyAPI_FUNC(PyObject *) _PyDictView_New(PyObject *, PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
+
+PyAPI_FUNC(int) _PyDict_Resize(PyObject *op, Py_ssize_t newsize);
+PyAPI_FUNC(int) _PyDict_SetItemInit(PyObject *op, PyObject *key, PyObject *value, int not_empty);
+PyAPI_FUNC(void) _PyDict_NextVersion(PyObject *op);

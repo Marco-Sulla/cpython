@@ -4812,6 +4812,10 @@ _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
     PyObject *new_memo = PyDict_New();
     if (new_memo == NULL)
         return NULL;
+    if (_PyDict_Resize(new_memo, self->pickler->memo->mt_allocated)) {
+        Py_DECREF(new_memo);
+        return NULL;
+    }
 
     memo = self->pickler->memo;
     for (size_t i = 0; i < memo->mt_allocated; ++i) {
@@ -4828,13 +4832,14 @@ _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
                 Py_XDECREF(value);
                 goto error;
             }
-            status = PyDict_SetItem(new_memo, key, value);
+            status = _PyDict_SetItemInit(new_memo, key, value, 0);
             Py_DECREF(key);
             Py_DECREF(value);
             if (status < 0)
                 goto error;
         }
     }
+    _PyDict_NextVersion(new_memo);
     return new_memo;
 
   error:
@@ -5765,14 +5770,19 @@ load_dict(UnpicklerObject *self)
         return -1;
     }
 
+    if (_PyDict_Resize(dict, (j - i) >> 1)) {
+        Py_DECREF(dict);
+        return -1;
+    }
     for (k = i + 1; k < j; k += 2) {
         key = self->stack->data[k - 1];
         value = self->stack->data[k];
-        if (PyDict_SetItem(dict, key, value) < 0) {
+        if (_PyDict_SetItemInit(dict, key, value, 0) < 0) {
             Py_DECREF(dict);
             return -1;
         }
     }
+    _PyDict_NextVersion(dict);
     Pdata_clear(self->stack, i);
     PDATA_PUSH(self->stack, dict, -1);
     return 0;
@@ -7329,6 +7339,10 @@ _pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self)
     PyObject *new_memo = PyDict_New();
     if (new_memo == NULL)
         return NULL;
+    if (_PyDict_Resize(new_memo, self->unpickler->memo_size)) {
+        Py_DECREF(new_memo);
+        return NULL;
+    }
 
     for (i = 0; i < self->unpickler->memo_size; i++) {
         int status;
@@ -7341,11 +7355,12 @@ _pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self)
         key = PyLong_FromSsize_t(i);
         if (key == NULL)
             goto error;
-        status = PyDict_SetItem(new_memo, key, value);
+        status = _PyDict_SetItemInit(new_memo, key, value, 0);
         Py_DECREF(key);
         if (status < 0)
             goto error;
     }
+    _PyDict_NextVersion(new_memo);
     return new_memo;
 
 error:

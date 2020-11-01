@@ -248,6 +248,10 @@ static uint64_t pydict_global_version = 0;
 
 #define DICT_NEXT_VERSION() (++pydict_global_version)
 
+void _PyDict_NextVersion(PyObject *op) {
+    ((PyDictObject *)op)->ma_version_tag = DICT_NEXT_VERSION();
+}
+
 #include "clinic/dictobject.c.h"
 
 
@@ -1384,6 +1388,12 @@ dictresize(PyDictObject *mp, Py_ssize_t newsize)
     return 0;
 }
 
+int
+_PyDict_Resize(PyObject *op, Py_ssize_t newsize)
+{
+    return dictresize((PyDictObject *)op, estimate_keysize(newsize));
+}
+
 /* Returns NULL if unable to split table.
  * A NULL return does not necessarily indicate an error */
 static PyDictKeysObject *
@@ -1739,6 +1749,12 @@ dict_set_item_init(PyObject *op, PyObject *key, PyObject *value, int not_empty)
     }
 
     return insertdict_init(mp, key, hash, value, not_empty);
+}
+
+int
+_PyDict_SetItemInit(PyObject *op, PyObject *key, PyObject *value, int not_empty)
+{
+    return dict_set_item_init(op, key, value, not_empty);
 }
 
 int

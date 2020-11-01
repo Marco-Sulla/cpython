@@ -1667,16 +1667,21 @@ set_mro_error(PyObject **to_merge, Py_ssize_t to_merge_size, int *remain)
     PyObject *set = PyDict_New();
     if (!set) return;
 
+    if (_PyDict_Resize(set, to_merge_size)) {
+        Py_DECREF(set);
+        return;
+    }
     for (i = 0; i < to_merge_size; i++) {
         PyObject *L = to_merge[i];
         if (remain[i] < PyTuple_GET_SIZE(L)) {
             PyObject *c = PyTuple_GET_ITEM(L, remain[i]);
-            if (PyDict_SetItem(set, c, Py_None) < 0) {
+            if (_PyDict_SetItemInit(set, c, Py_None, 0) < 0) {
                 Py_DECREF(set);
                 return;
             }
         }
     }
+    _PyDict_NextVersion(set);
     n = PyDict_GET_SIZE(set);
 
     off = PyOS_snprintf(buf, sizeof(buf), "Cannot create a \
@@ -4396,6 +4401,12 @@ _PyObject_GetState(PyObject *obj, int required)
             }
 
             slotnames_size = PyList_GET_SIZE(slotnames);
+            if (_PyDict_Resize(slots, slotnames_size)) {
+                Py_DECREF(slotnames);
+                Py_DECREF(state);
+                Py_DECREF(slots);
+                return NULL;
+            }
             for (i = 0; i < slotnames_size; i++) {
                 PyObject *name, *value;
 
@@ -4409,7 +4420,7 @@ _PyObject_GetState(PyObject *obj, int required)
                     /* It is not an error if the attribute is not present. */
                 }
                 else {
-                    int err = PyDict_SetItem(slots, name, value);
+                    int err = _PyDict_SetItemInit(slots, name, value, 0);
                     Py_DECREF(name);
                     Py_DECREF(value);
                     if (err) {
@@ -4434,6 +4445,8 @@ _PyObject_GetState(PyObject *obj, int required)
                     return NULL;
                 }
             }
+
+            _PyDict_NextVersion(slots);
 
             /* If we found some slot attributes, pack them in a tuple along
                the original attribute dictionary. */

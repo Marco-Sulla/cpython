@@ -2950,14 +2950,15 @@ main_loop:
 
         case TARGET(BUILD_MAP): {
             Py_ssize_t i;
-            PyObject *map = _PyDict_NewPresized((Py_ssize_t)oparg);
+            PyObject *map = PyDict_New();
             if (map == NULL)
                 goto error;
+            if (_PyDict_Resize(map, oparg)) goto error;
             for (i = oparg; i > 0; i--) {
                 int err;
                 PyObject *key = PEEK(2*i);
                 PyObject *value = PEEK(2*i - 1);
-                err = PyDict_SetItem(map, key, value);
+                err = _PyDict_SetItemInit(map, key, value, 0);
                 if (err != 0) {
                     Py_DECREF(map);
                     goto error;
@@ -2968,6 +2969,7 @@ main_loop:
                 Py_DECREF(POP());
                 Py_DECREF(POP());
             }
+            _PyDict_NextVersion(map);
             PUSH(map);
             DISPATCH();
         }
@@ -3041,15 +3043,16 @@ main_loop:
                                  "bad BUILD_CONST_KEY_MAP keys argument");
                 goto error;
             }
-            map = _PyDict_NewPresized((Py_ssize_t)oparg);
+            map = PyDict_New();
             if (map == NULL) {
                 goto error;
             }
+            if (_PyDict_Resize(map, oparg)) goto error;
             for (i = oparg; i > 0; i--) {
                 int err;
                 PyObject *key = PyTuple_GET_ITEM(keys, oparg - i);
                 PyObject *value = PEEK(i + 1);
-                err = PyDict_SetItem(map, key, value);
+                err = _PyDict_SetItemInit(map, key, value, 0);
                 if (err != 0) {
                     Py_DECREF(map);
                     goto error;
@@ -3060,6 +3063,7 @@ main_loop:
             while (oparg--) {
                 Py_DECREF(POP());
             }
+            _PyDict_NextVersion(map);
             PUSH(map);
             DISPATCH();
         }

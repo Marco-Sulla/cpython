@@ -436,6 +436,10 @@ list2dict(PyObject *list)
     if (!dict) return NULL;
 
     n = PyList_Size(list);
+    if (_PyDict_Resize(dict, n)) {
+        Py_DECREF(dict);
+        return NULL;
+    }
     for (i = 0; i < n; i++) {
         v = PyLong_FromSsize_t(i);
         if (!v) {
@@ -443,13 +447,14 @@ list2dict(PyObject *list)
             return NULL;
         }
         k = PyList_GET_ITEM(list, i);
-        if (PyDict_SetItem(dict, k, v) < 0) {
+        if (_PyDict_SetItemInit(dict, k, v, 0) < 0) {
             Py_DECREF(v);
             Py_DECREF(dict);
             return NULL;
         }
         Py_DECREF(v);
     }
+    _PyDict_NextVersion(dict);
     return dict;
 }
 
@@ -486,6 +491,10 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
     }
     num_keys = PyList_GET_SIZE(sorted_keys);
 
+    if (_PyDict_Resize(dest, num_keys)) {
+        Py_DECREF(sorted_keys);
+        return NULL;
+    }
     for (key_i = 0; key_i < num_keys; key_i++) {
         /* XXX this should probably be a macro in symtable.h */
         long vi;
@@ -503,7 +512,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
                 return NULL;
             }
             i++;
-            if (PyDict_SetItem(dest, k, item) < 0) {
+            if (_PyDict_SetItemInit(dest, k, item, 0) < 0) {
                 Py_DECREF(sorted_keys);
                 Py_DECREF(item);
                 Py_DECREF(dest);
@@ -513,6 +522,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
         }
     }
     Py_DECREF(sorted_keys);
+    _PyDict_NextVersion(dest);
     return dest;
 }
 
