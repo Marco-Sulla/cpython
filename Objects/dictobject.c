@@ -2929,16 +2929,6 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
         
         const int is_other_combined = other->ma_values == NULL;
         
-        /* Do one big resize at the start, rather than
-         * incrementally resizing as we insert new items.  Expect
-         * that there will be no (or few) overlapping keys.
-         */
-        if (mp->ma_keys->dk_usable < numentries) {
-            if (frozendict_resize(mp, mp->ma_used + numentries)) {
-               return -1;
-            }
-        }
-        
         PyDictKeysObject* oldkeys = other->ma_keys;
         
         if (empty && numentries == oldkeys->dk_nentries) {
@@ -2947,7 +2937,7 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
                 return -1;
             }
 
-            dictkeys_decref(mp->ma_keys, 0);
+            dictkeys_decref(mp->ma_keys, 1);
             mp->ma_keys = keys;
             
             PyObject** newvalues = new_values(numentries);
@@ -3002,6 +2992,17 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
         PyObject* key;
         PyObject* value;
         Py_hash_t hash;
+        
+        
+        /* Do one big resize at the start, rather than
+         * incrementally resizing as we insert new items.  Expect
+         * that there will be no (or few) overlapping keys.
+         */
+        if (mp->ma_keys->dk_usable < numentries) {
+            if (frozendict_resize(mp, mp->ma_used + numentries)) {
+               return -1;
+            }
+        }
         
         if (is_other_combined) {
             for (Py_ssize_t i = 0, n = oldkeys->dk_nentries; i < n; i++) {
