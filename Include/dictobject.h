@@ -93,7 +93,9 @@ PyAPI_DATA(PyTypeObject) PyDictItems_Type;
 PyAPI_DATA(PyTypeObject) PyDictIterKey_Type;
 PyAPI_DATA(PyTypeObject) PyFrozenDictIterKey_Type;
 PyAPI_DATA(PyTypeObject) PyDictIterValue_Type;
+PyAPI_DATA(PyTypeObject) PyFrozenDictIterValue_Type;
 PyAPI_DATA(PyTypeObject) PyDictIterItem_Type;
+PyAPI_DATA(PyTypeObject) PyFrozenDictIterItem_Type;
 
 PyAPI_DATA(PyTypeObject) PyDictRevIterKey_Type;
 PyAPI_DATA(PyTypeObject) PyDictRevIterItem_Type;

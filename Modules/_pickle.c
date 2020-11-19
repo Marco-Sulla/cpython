@@ -5856,9 +5856,7 @@ load_frozendict(UnpicklerObject *self)
         return -1;
     j = Py_SIZE(self->stack);
     
-    _PyDict_Use_empty_frozendict(0);
     dict = PyFrozenDict_New(NULL, NULL);
-    _PyDict_Use_empty_frozendict(1);
     
     if (dict == NULL)
         return -1;

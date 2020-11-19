@@ -704,8 +704,11 @@ new_dict_with_shared_keys(PyDictKeysObject *keys)
 static PyDictKeysObject *
 clone_combined_dict_keys(PyDictObject *orig)
 {
-    assert(PyDict_Check(orig));
-    assert(Py_TYPE(orig)->tp_iter == (getiterfunc)dict_iter);
+    assert(PyAnyDict_Check(orig));
+    assert(
+        Py_TYPE(orig)->tp_iter == (getiterfunc)dict_iter
+        || Py_TYPE(orig)->tp_iter == (getiterfunc)frozendict_iter
+    );
     assert(orig->ma_values == NULL);
     assert(orig->ma_keys->dk_refcnt == 1);
 
@@ -979,96 +982,6 @@ lookdict_split(PyDictObject *mp, PyObject *key,
     Py_UNREACHABLE();
 }
 
-static Py_ssize_t _Py_HOT_FUNCTION 
-frozendict_lookup(PyDictObject* mp, 
-                  PyObject* key,
-                  Py_hash_t hash, 
-                  PyObject** value_addr) {
-    /* mp must split table */
-    assert(mp->ma_values != NULL);
-    
-    PyDictKeysObject* dk = mp->ma_keys;
-    PyDictKeyEntry* ep0 = DK_ENTRIES(dk);
-    const size_t mask = DK_MASK(dk);
-    size_t perturb = (size_t)hash;
-    size_t i = (size_t)hash & mask;
-    
-    Py_ssize_t ix;
-    PyDictKeyEntry* ep;
-    
-    while (1) {
-        ix = dictkeys_get_index(dk, i);
-        assert(ix != DKIX_DUMMY);
-        
-        if (ix == DKIX_EMPTY) {
-            *value_addr = NULL;
-            return DKIX_EMPTY;
-        }
-        
-        ep = &ep0[ix];
-        assert(ep->me_key != NULL);
-        
-        if (
-            ep->me_key == key ||
-            (ep->me_hash == hash && 
-            PyObject_RichCompareBool(ep->me_key, key, Py_EQ) == 1)
-        ) {
-            *value_addr = mp->ma_values[ix];
-            return ix;
-        }
-        
-        perturb >>= PERTURB_SHIFT;
-        i = mask & (i*5 + perturb + 1);
-    }
-    
-    Py_UNREACHABLE();
-}
-
-static Py_ssize_t _Py_HOT_FUNCTION 
-frozendict_lookup_unicode(PyDictObject *mp, 
-                          PyObject *key,
-                          Py_hash_t hash, 
-                          PyObject** value_addr) {
-    /* mp must split table */
-    assert(mp->ma_values != NULL);
-    
-    PyDictKeysObject* dk = mp->ma_keys;
-    PyDictKeyEntry* ep0 = DK_ENTRIES(dk);
-    const size_t mask = DK_MASK(dk);
-    size_t perturb = (size_t)hash;
-    size_t i = (size_t)hash & mask;
-    
-    Py_ssize_t ix;
-    PyDictKeyEntry* ep;
-
-    while (1) {
-        ix = dictkeys_get_index(dk, i);
-        assert(ix != DKIX_DUMMY);
-        
-        if (ix == DKIX_EMPTY) {
-            *value_addr = NULL;
-            return DKIX_EMPTY;
-        }
-        
-        ep = &ep0[ix];
-        assert(ep->me_key != NULL);
-        assert(PyUnicode_CheckExact(ep->me_key));
-        
-        if (
-            ep->me_key == key ||
-            (ep->me_hash == hash && unicode_eq(ep->me_key, key))
-        ) {
-            *value_addr = mp->ma_values[ix];
-            return ix;
-        }
-        
-        perturb >>= PERTURB_SHIFT;
-        i = mask & (i*5 + perturb + 1);
-    }
-    
-    Py_UNREACHABLE();
-}
-
 static int dict_has_only_unicode_keys_exact(PyDictObject* mp) {
     PyDictKeyEntry* ep0 = DK_ENTRIES(mp->ma_keys);
 
@@ -1094,37 +1007,6 @@ _PyDict_HasOnlyStringKeys(PyObject *dict)
         if (!PyUnicode_Check(key))
             return 0;
     return 1;
-}
-
-static PyDictKeysObject *
-frozendict_clone(const PyDictObject *orig)
-{
-    assert(PyAnyDict_Check(orig));
-    assert(
-        Py_TYPE(orig)->tp_iter == (getiterfunc)dict_iter
-        || Py_TYPE(orig)->tp_iter == (getiterfunc)frozendict_iter
-    );
-
-    PyDictKeysObject* oldkeys = orig->ma_keys;
-    Py_ssize_t keys_size = _PyDict_KeysSize(oldkeys);
-    PyDictKeysObject *keys = PyObject_Malloc(keys_size);
-    if (keys == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    memcpy(keys, oldkeys, keys_size);
-    
-    if (keys->dk_lookup == lookdict_unicode_nodummy) {
-        keys->dk_lookup = frozendict_lookup_unicode;
-    }
-    else if (keys->dk_lookup == lookdict || keys->dk_lookup == lookdict_split) {
-        keys->dk_lookup = frozendict_lookup;
-    }
-
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
-    return keys;
 }
 
 #define MAINTAIN_TRACKING(mp, key, value) \
@@ -1451,7 +1333,7 @@ dictresize(PyDictObject *mp, Py_ssize_t newsize)
 }
 
 static int frozendict_resize(PyDictObject* mp, Py_ssize_t minsize) {
-    const Py_ssize_t newsize = calculate_keysize(estimate_keysize(minsize));
+    const Py_ssize_t newsize = calculate_keysize(minsize);
     
     if (newsize <= 0) {
         PyErr_NoMemory();
@@ -1473,18 +1355,10 @@ static int frozendict_resize(PyDictObject* mp, Py_ssize_t minsize) {
     // New table must be large enough.
     assert(new_keys->dk_usable >= mp->ma_used);
     
-    PyObject** newvalues = new_values(newsize);
-    
-    if (newvalues == NULL) {
-        dictkeys_decref(new_keys, 0);
-        return -1;
-    }
-    
     new_keys->dk_lookup = oldkeys->dk_lookup;
 
     const Py_ssize_t numentries = mp->ma_used;
     PyDictKeyEntry* newentries = DK_ENTRIES(new_keys);
-    PyObject** oldvalues = mp->ma_values;
     
     memcpy(
         newentries, 
@@ -1492,18 +1366,14 @@ static int frozendict_resize(PyDictObject* mp, Py_ssize_t minsize) {
         numentries * sizeof(PyDictKeyEntry)
     );
     
-    memcpy(newvalues, oldvalues, numentries * sizeof(PyObject*));
-    
     build_indices(new_keys, newentries, numentries);
     new_keys->dk_usable -= numentries;
     new_keys->dk_nentries = numentries;
     
     // do not decref the keys inside!
     dictkeys_decref(oldkeys, 0);
-    free_values(oldvalues);
     
     mp->ma_keys = new_keys;
-    mp->ma_values = newvalues;
     
     return 0;
 }
@@ -1536,6 +1406,8 @@ static int frozendict_insert(PyDictObject *mp,
     if (empty) {
         /* Insert into new slot. */
         
+        assert(old_value == NULL);
+
         if (mp->ma_keys->dk_usable <= 0) {
             /* Need to resize. */
             if (frozendict_resize(mp, GROWTH_RATE(mp))) {
@@ -1554,24 +1426,16 @@ static int frozendict_insert(PyDictObject *mp,
         dictkeys_set_index(keys, hashpos, dk_nentries);
         ep->me_key = key;
         ep->me_hash = hash;
-        mp->ma_values[dk_nentries] = value;
+        ep->me_value = value;
         mp->ma_used++;
         keys->dk_usable--;
         keys->dk_nentries++;
         assert(keys->dk_usable >= 0);
     }
     else {
-        mp->ma_values[ix] = value;
-
-        if (old_value == NULL) {
-            /* pending state */
-            assert(ix == mp->ma_used);
-            mp->ma_used++;
-        }
-        else {
-            Py_DECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
-        }
-
+        assert(old_value != NULL);
+        DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
+        Py_DECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
         Py_DECREF(key);
     }
 
@@ -1857,7 +1721,6 @@ static int frozendict_setitem(PyObject *op,
                               int empty) {
     Py_hash_t hash;
 
-    assert(PyFrozenDict_Check(op));
     assert(key);
     assert(value);
 
@@ -1876,6 +1739,11 @@ int _PyFrozendict_SetItem(PyObject *op,
                          PyObject *key, 
                          PyObject *value, 
                          int empty) {
+    if (! PyFrozenDict_Check(op)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
     return frozendict_setitem(op, key, value, empty);
 }
 
@@ -2311,10 +2179,10 @@ static void frozendict_update_lookup(PyObject* op) {
     PyDictKeysObject* keys = mp->ma_keys;
     
     if (dict_has_only_unicode_keys_exact(mp)) {
-            keys->dk_lookup = frozendict_lookup_unicode;
+            keys->dk_lookup = lookdict_unicode_nodummy;
     }
     else {
-        keys->dk_lookup = frozendict_lookup;
+        keys->dk_lookup = lookdict;
     }
 };
 
@@ -2323,12 +2191,14 @@ void _PyFrozendict_UpdateLookup(PyObject* op) {
 }
 
 // empty frozendict singleton
-static int use_empty_frozendict = 1;
 static PyObject* empty_frozendict = NULL;
 
-void _PyDict_Use_empty_frozendict(int boolean) {
-    use_empty_frozendict = boolean;
-}
+static PyObject* _frozendict_new(
+    PyTypeObject* type, 
+    PyObject* args, 
+    PyObject* kwds, 
+    const int use_empty_frozendict
+);
 
 /* Internal version of dict.from_keys().  It is subclass-friendly. */
 static PyObject *
@@ -2339,9 +2209,8 @@ frozendict_fromkeys_impl(PyObject *type, PyObject *iterable, PyObject *value)
     PyObject *d;
     int status;
     
-    use_empty_frozendict = 0;
-    d = _PyObject_CallNoArg((PyObject *)&PyFrozenDict_Type);
-    use_empty_frozendict = 1;
+    d = _frozendict_new(&PyFrozenDict_Type, NULL, NULL, 0);
+
     if (d == NULL)
         return NULL;
     
@@ -2357,7 +2226,7 @@ frozendict_fromkeys_impl(PyObject *type, PyObject *iterable, PyObject *value)
         size = PyDict_GET_SIZE(iterable);
         
         if (mp->ma_keys->dk_usable < size) {
-            if (frozendict_resize(mp, size)) {
+            if (frozendict_resize(mp, estimate_keysize(size))) {
                 Py_DECREF(d);
                 return NULL;
             }
@@ -2380,7 +2249,7 @@ frozendict_fromkeys_impl(PyObject *type, PyObject *iterable, PyObject *value)
         size = PySet_GET_SIZE(iterable);
         
         if (mp->ma_keys->dk_usable < size) {
-            if (frozendict_resize(mp, size)) {
+            if (frozendict_resize(mp, estimate_keysize(size))) {
                 Py_DECREF(d);
                 return NULL;
             }
@@ -2418,6 +2287,10 @@ frozendict_fromkeys_impl(PyObject *type, PyObject *iterable, PyObject *value)
         }
     }
     
+    if ((PyTypeObject*) type == &PyFrozenDict_Type) {
+        return d;
+    }
+
     PyObject* args = PyTuple_New(1);
 
     if (args == NULL) {
@@ -2919,7 +2792,7 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
             Py_TYPE(b)->tp_iter == (getiterfunc)frozendict_iter
         )
     ) {
-        const PyDictObject* other = (PyDictObject*)b;
+        PyDictObject* other = (PyDictObject*)b;
         const Py_ssize_t numentries = other->ma_used;
         
         if (other == mp || numentries == 0) {
@@ -2929,10 +2802,18 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
         
         const int is_other_combined = other->ma_values == NULL;
         
-        PyDictKeysObject* oldkeys = other->ma_keys;
+        PyDictKeysObject* okeys = other->ma_keys;
         
-        if (empty && numentries == oldkeys->dk_nentries) {
-            PyDictKeysObject *keys = frozendict_clone(other);
+        if (
+            empty 
+            && is_other_combined 
+            && numentries == okeys->dk_nentries 
+            && (
+                okeys->dk_size == PyDict_MINSIZE 
+                || USABLE_FRACTION(okeys->dk_size/2) < other->ma_used
+            )
+        ) {
+            PyDictKeysObject *keys = clone_combined_dict_keys(other);
             if (keys == NULL) {
                 return -1;
             }
@@ -2940,42 +2821,6 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
             dictkeys_decref(mp->ma_keys, 1);
             mp->ma_keys = keys;
             
-            PyObject** newvalues = new_values(numentries);
-            if (newvalues == NULL) {
-                dictkeys_decref(keys, 1);
-                return -1;
-            }
-            
-            if (! is_other_combined) {
-                memcpy(newvalues, other->ma_values, numentries * sizeof(PyObject*));
-            }
-            
-            PyDictKeyEntry* oldentries = DK_ENTRIES(oldkeys);
-            PyDictKeyEntry* newentries = DK_ENTRIES(mp->ma_keys);
-            
-            if (is_other_combined) {
-                PyObject* value;
-                
-                for (Py_ssize_t i=0; i<numentries; i++) {
-                    Py_INCREF(newentries[i].me_key);
-                    value = oldentries[i].me_value;
-                    Py_INCREF(value);
-                    Py_INCREF(value);
-                    newvalues[i] = value;
-                }
-            }
-            else {
-                for (Py_ssize_t i=0; i<numentries; i++) {
-                    Py_INCREF(newentries[i].me_key);
-                    Py_INCREF(newvalues[i]);
-                    Py_INCREF(newvalues[i]);
-                }
-            }
-            
-            PyObject** oldvalues = mp->ma_values;
-            mp->ma_values = newvalues;
-            free_values(oldvalues);
-
             mp->ma_used = numentries;
             mp->ma_version_tag = DICT_NEXT_VERSION();
             ASSERT_CONSISTENT(mp);
@@ -2987,61 +2832,39 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
             return 0;
         }
         
-        PyDictKeyEntry* ep0 = DK_ENTRIES(oldkeys);
+        PyDictKeyEntry* ep0 = DK_ENTRIES(okeys);
         PyDictKeyEntry* entry;
         PyObject* key;
         PyObject* value;
         Py_hash_t hash;
-        
+        int err;
         
         /* Do one big resize at the start, rather than
          * incrementally resizing as we insert new items.  Expect
          * that there will be no (or few) overlapping keys.
          */
         if (mp->ma_keys->dk_usable < numentries) {
-            if (frozendict_resize(mp, mp->ma_used + numentries)) {
+            if (frozendict_resize(mp, estimate_keysize(mp->ma_used + numentries))) {
                return -1;
             }
         }
         
-        if (is_other_combined) {
-            for (Py_ssize_t i = 0, n = oldkeys->dk_nentries; i < n; i++) {
-                entry = &ep0[i];
-                key = entry->me_key;
-                hash = entry->me_hash;
-                
+        for (Py_ssize_t i = 0, n = okeys->dk_nentries; i < n; i++) {
+            entry = &ep0[i];
+            key = entry->me_key;
+            hash = entry->me_hash;
+            
+            if (is_other_combined) {
                 value = entry->me_value;
-                
-                if (value != NULL) {
-                    Py_INCREF(key);
-                    Py_INCREF(value);
-                    int err = frozendict_insert(mp, key, hash, value, empty);
-                    Py_DECREF(value);
-                    Py_DECREF(key);
-                    
-                    if (err != 0) {
-                        return -1;
-                    }
-                    
-                    if (n != other->ma_keys->dk_nentries) {
-                        PyErr_SetString(PyExc_RuntimeError,
-                                        "dict mutated during update");
-                        return -1;
-                    }
-                }
             }
-        }
-        else {
-            for (Py_ssize_t i = 0, n = oldkeys->dk_nentries; i < n; i++) {
-                entry = &ep0[i];
-                key = entry->me_key;
-                hash = entry->me_hash;
-                
+            else {
                 value = other->ma_values[i];
-                
+            }
+            
+            if (value != NULL) {
                 Py_INCREF(key);
                 Py_INCREF(value);
-                int err = frozendict_insert(mp, key, hash, value, empty);
+                err = frozendict_insert(mp, key, hash, value, empty);
                 Py_DECREF(value);
                 Py_DECREF(key);
                 
@@ -3652,7 +3475,7 @@ static PyObject* frozendict_set(PyObject* self,
         _PyObject_GC_UNTRACK(new_op);
     }
 
-    const PyDictObject* mp = (PyDictObject*) self;
+    PyDictObject* mp = (PyDictObject*) self;
     const Py_ssize_t size = mp->ma_used;
     const Py_ssize_t sizepp = size + 1;
     const Py_ssize_t newsize = calculate_keysize(estimate_keysize(sizepp));
@@ -3666,47 +3489,19 @@ static PyObject* frozendict_set(PyObject* self,
     assert(IS_POWER_OF_2(newsize));
     assert(newsize >= PyDict_MINSIZE);
 
-    /* Allocate a new table. */
-    PyDictKeysObject* new_keys = new_keys_object(newsize);
+    PyDictKeysObject *keys = clone_combined_dict_keys(mp);
     
-    if (new_keys == NULL) {
-        Py_DECREF(new_op);
+    if (keys == NULL) {
         return NULL;
     }
-    
-    PyObject** newvalues = new_values(sizepp);
-    
-    if (newvalues == NULL) {
-        Py_DECREF(new_op);
-        dictkeys_decref(new_keys, 0);
-        return NULL;
-    }
-    
-    PyDictKeysObject* old_keys = mp->ma_keys;
-    
+
     PyFrozenDictObject* new_mp = (PyFrozenDictObject*) new_op;
-    
-    // New table must be large enough.
-    assert(new_keys->dk_usable >= new_mp->ma_used);
-    
-    Py_ssize_t keys_size = _PyDict_KeysSize(old_keys);
-    memcpy(new_keys, old_keys, keys_size);
-    memcpy(newvalues, mp->ma_values, size * sizeof(PyObject*));
-    
-    PyDictKeyEntry* newentries = DK_ENTRIES(new_keys);
-    
-    for (Py_ssize_t i=0; i<size; i++) {
-        Py_INCREF(newentries[i].me_key);
-        Py_INCREF(newvalues[i]);
-        Py_INCREF(newvalues[i]);
-    }
+    new_mp->ma_keys = keys;
     
     if (_PyObject_GC_IS_TRACKED(mp) && !_PyObject_GC_IS_TRACKED(new_mp)) {
         _PyObject_GC_TRACK(new_mp);
     }
     
-    new_mp->ma_keys = new_keys;
-    new_mp->ma_values = newvalues;
     new_mp->ma_used = size;
     new_mp->_hash = -1;
     new_mp->_hash_calculated = 0;
@@ -3720,10 +3515,10 @@ static PyObject* frozendict_set(PyObject* self,
     }
 
     if (
-        old_keys->dk_lookup == frozendict_lookup_unicode && 
+        mp->ma_keys->dk_lookup == lookdict_unicode_nodummy && 
         ! PyUnicode_CheckExact(set_key)
     ) {
-        new_keys->dk_lookup = frozendict_lookup;
+        keys->dk_lookup = lookdict;
     }
     
     ASSERT_CONSISTENT(new_mp);
@@ -3841,9 +3636,8 @@ static int frozendict_equal(PyDictObject* a, PyDictObject* b) {
     /* Same # of entries -- check all of 'em.  Exit early on any diff. */
     for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
         ep = &DK_ENTRIES(keys)[i];
-        aval = a->ma_values[i];
+        aval = ep->me_value;
         Py_INCREF(aval);
-        assert(aval != NULL);
         key = ep->me_key;
         Py_INCREF(key);
 
@@ -4312,7 +4106,9 @@ PyDoc_STRVAR(copy__doc__,
 static PyObject *dictkeys_new(PyObject *, PyObject *);
 static PyObject *frozendictkeys_new(PyObject *, PyObject *);
 static PyObject *dictitems_new(PyObject *, PyObject *);
+static PyObject *frozendictitems_new(PyObject *, PyObject *);
 static PyObject *dictvalues_new(PyObject *, PyObject *);
+static PyObject *frozendictvalues_new(PyObject *, PyObject *);
 
 PyDoc_STRVAR(keys__doc__,
              "D.keys() -> a set-like object providing a view on D's keys");
@@ -4364,9 +4160,9 @@ static PyMethodDef frozen_mapp_methods[] = {
     DICT_GET_METHODDEF
     {"keys",            frozendictkeys_new,             METH_NOARGS,
     keys__doc__},
-    {"items",           dictitems_new,                  METH_NOARGS,
+    {"items",           frozendictitems_new,            METH_NOARGS,
     items__doc__},
-    {"values",          dictvalues_new,                 METH_NOARGS,
+    {"values",          frozendictvalues_new,           METH_NOARGS,
     values__doc__},
     {"fromkeys",        (PyCFunction)(void(*)(void))frozendict_fromkeys, METH_FASTCALL|METH_CLASS, 
     dict_fromkeys__doc__},
@@ -4497,36 +4293,10 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
     return self;
 }
 
-static PyObject* frozendict_new_barebone(PyTypeObject* type, 
-                                         PyObject* args, 
-                                         PyObject* kwds, 
-                                         PyObject** argo) {
-    assert(type != NULL && type->tp_alloc != NULL);
-
-    PyObject* arg = *argo = NULL;
-    
-    if (args != NULL && ! PyArg_UnpackTuple(args, __func__, 0, 1, &arg)) {
-        return NULL;
-    }
-    
-    *argo = arg;
-    
-    const int arg_is_frozendict = (arg != NULL && PyFrozenDict_CheckExact(arg));
-    const int kwds_size = ((kwds != NULL) 
-        ? ((PyDictObject*) kwds)->ma_used 
-        : 0
-    );
-
-    // only argument is a frozendict
-    if (arg_is_frozendict && kwds_size == 0 && type == &PyFrozenDict_Type) {
-        Py_INCREF(arg);
-
-        return arg;
-    }
-
+static PyObject* frozendict_new_barebone(PyTypeObject* type) {
     PyObject* self = type->tp_alloc(type, 0);
-
-    if (self == NULL){
+    
+    if (self == NULL) {
         return NULL;
     }
 
@@ -4534,19 +4304,22 @@ static PyObject* frozendict_new_barebone(PyTypeObject* type,
     if (type == &PyFrozenDict_Type) {
         _PyObject_GC_UNTRACK(self);
     }
-    
+
     PyFrozenDictObject* mp = (PyFrozenDictObject*) self;
-    
     PyDictKeysObject* keys = new_keys_object(PyDict_MINSIZE);
-    keys->dk_lookup = frozendict_lookup;
+
+    if (keys == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    
+    keys->dk_lookup = lookdict;
     
     mp->ma_keys = keys;
-    mp->ma_values = new_values(PyDict_MINSIZE);
+    mp->ma_values = NULL;
     mp->ma_used = 0;
     mp->_hash = -1;
     mp->_hash_calculated = 0;
-
-    ASSERT_CONSISTENT(mp);
 
     return self;
 }
@@ -4558,21 +4331,11 @@ static PyObject* frozendict_vectorcall(PyObject* type,
     assert(PyType_Check(type));
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     
-    if (! _PyArg_CheckPositional(__func__, nargs, 0, 1)) {
+    if (! _PyArg_CheckPositional("dict", nargs, 0, 1)) {
         return NULL;
     }
     
-    PyObject* arg_null;
-    PyObject* self = frozendict_new_barebone(
-        (PyTypeObject*) type, 
-        NULL, 
-        NULL, 
-        &arg_null
-    );
-    
-    if (self == NULL) {
-        return NULL;
-    }
+    PyTypeObject* ttype = (PyTypeObject*) type;
     
     const Py_ssize_t size = (
         kwnames == NULL
@@ -4580,17 +4343,25 @@ static PyObject* frozendict_vectorcall(PyObject* type,
         : PyTuple_GET_SIZE(kwnames)
     );
     
+    PyObject* arg;
+
     if (nargs == 1) {
-        PyObject* arg = args[0];
+        arg = args[0];
         const int arg_is_frozendict = (arg != NULL && PyFrozenDict_CheckExact(arg));
         
         // only argument is a frozendict
-        if (arg_is_frozendict && size == 0 && (PyTypeObject*) type == &PyFrozenDict_Type) {
+        if (arg_is_frozendict && size == 0 && ttype == &PyFrozenDict_Type) {
             Py_INCREF(arg);
 
             return arg;
         }
-        
+    }
+
+    PyObject* self = frozendict_new_barebone(ttype);
+
+    PyFrozenDictObject* mp = (PyFrozenDictObject*) self;
+    
+    if (nargs == 1) {
         if (frozendict_update_arg(self, arg, 1) < 0) {
             Py_DECREF(self);
             return NULL;
@@ -4598,12 +4369,10 @@ static PyObject* frozendict_vectorcall(PyObject* type,
         
         args++;
     }
-    
-    PyDictObject* mp = (PyDictObject*) self;
-    
+
     if (kwnames != NULL) {
         if (mp->ma_keys->dk_usable < size) {
-            if (frozendict_resize(mp, mp->ma_used + size)) {
+            if (frozendict_resize((PyDictObject*) self, estimate_keysize(mp->ma_used + size))) {
                return NULL;
             }
         }
@@ -4617,7 +4386,7 @@ static PyObject* frozendict_vectorcall(PyObject* type,
     }
     
     // if frozendict is empty, return the empty singleton
-    if (mp->ma_used == 0 && use_empty_frozendict && (PyTypeObject*) type == &PyFrozenDict_Type) {
+    if (mp->ma_used == 0 && ttype == &PyFrozenDict_Type) {
         if (empty_frozendict == NULL) {
             empty_frozendict = self;
             mp->ma_version_tag = DICT_NEXT_VERSION();
@@ -4628,6 +4397,10 @@ static PyObject* frozendict_vectorcall(PyObject* type,
         return empty_frozendict;
     }
     
+    mp->ma_version_tag = DICT_NEXT_VERSION();
+    
+    ASSERT_CONSISTENT(mp);
+    
     return self;
 }
 
@@ -4637,22 +4410,41 @@ dict_iter(PyDictObject *dict)
     return dictiter_new(dict, &PyDictIterKey_Type);
 }
 
-static PyObject* frozendict_new(PyTypeObject* type, 
-                                PyObject* args, 
-                                PyObject* kwds) {
-    PyObject* arg;
-    PyObject* self = frozendict_new_barebone(type, args, kwds, &arg);
+static PyObject* _frozendict_new(
+    PyTypeObject* type, 
+    PyObject* args, 
+    PyObject* kwds, 
+    const int use_empty_frozendict
+) {
+    assert(type != NULL && type->tp_alloc != NULL);
     
-    if (self == arg && type == &PyFrozenDict_Type) {
-        return self;
+    PyObject* arg = NULL;
+    
+    if (args != NULL && ! PyArg_UnpackTuple(args, "dict", 0, 1, &arg)) {
+        return NULL;
     }
+    
+    const int arg_is_frozendict = (arg != NULL && PyFrozenDict_CheckExact(arg));
+    const int kwds_size = ((kwds != NULL) 
+        ? ((PyDictObject*) kwds)->ma_used 
+        : 0
+    );
+    
+    // only argument is a frozendict
+    if (arg_is_frozendict && kwds_size == 0 && type == &PyFrozenDict_Type) {
+        Py_INCREF(arg);
+        
+        return arg;
+    }
+    
+    PyObject* self = frozendict_new_barebone(type);
 
+    PyFrozenDictObject* mp = (PyFrozenDictObject*) self;
+    
     if (frozendict_update_common(self, arg, kwds)) {
         Py_DECREF(self);
         return NULL;
     }
-    
-    PyDictObject* mp = (PyDictObject*) self;
     
     // if frozendict is empty, return the empty singleton
     if (
@@ -4666,15 +4458,19 @@ static PyObject* frozendict_new(PyTypeObject* type,
         }
         
         Py_INCREF(empty_frozendict);
-        
+
         return empty_frozendict;
     }
-
+    
     mp->ma_version_tag = DICT_NEXT_VERSION();
-
+    
     ASSERT_CONSISTENT(mp);
 
     return self;
+}
+
+static PyObject* frozendict_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+    return _frozendict_new(type, args, kwds, 1);
 }
 
 PyObject* PyFrozenDict_New(PyObject* arg, PyObject* kwds) {
@@ -4686,7 +4482,7 @@ PyObject* PyFrozenDict_New(PyObject* arg, PyObject* kwds) {
 
     PyTuple_SET_ITEM(args, 0, arg);
 
-    return frozendict_new(&PyFrozenDict_Type, args, kwds);
+    return _frozendict_new(&PyFrozenDict_Type, args, kwds, 0);
 }
 
 #define MINUSONE_HASH ((Py_hash_t) -1)
@@ -4703,7 +4499,7 @@ static Py_hash_t frozendict_hash(PyObject* self) {
         }
     }
     else {
-        PyObject* frozen_items = PyFrozenSet_New(dictitems_new(self, NULL));
+        PyObject* frozen_items = PyFrozenSet_New(frozendictitems_new(self, NULL));
 
         if (frozen_items == NULL) {
             hash = MINUSONE_HASH;
@@ -4945,8 +4741,9 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     else {
         di->di_pos = 0;
     }
-    if (itertype == &PyDictIterItem_Type ||
-        itertype == &PyDictRevIterItem_Type) {
+    if (itertype == &PyDictIterItem_Type
+        || itertype == &PyFrozenDictIterItem_Type
+        || itertype == &PyDictRevIterItem_Type) {
         di->di_result = PyTuple_Pack(2, Py_None, Py_None);
         if (di->di_result == NULL) {
             Py_DECREF(di);
@@ -5074,8 +4871,6 @@ static PyObject* frozendictiter_iternextkey(dictiterobject* di) {
     }
 
     assert(PyFrozenDict_Check(d));
-    assert(d->ma_values[di->di_pos] != NULL);
-
     PyObject* key = DK_ENTRIES(d->ma_keys)[di->di_pos].me_key;
     assert(key != NULL);
     di->di_pos++;
@@ -5203,6 +4998,24 @@ fail:
     return NULL;
 }
 
+static PyObject* frozendictiter_iternextvalue(dictiterobject* di) {
+    Py_ssize_t pos = di->di_pos;
+    assert(pos >= 0);
+    PyDictObject* d = di->di_dict;
+    assert(d != NULL);
+
+    if (pos >= d->ma_used) {
+        return NULL;
+    }
+
+    assert(PyFrozenDict_Check(d));
+    PyObject* val = DK_ENTRIES(d->ma_keys)[di->di_pos].me_value;
+    assert(val != NULL);
+    di->di_pos++;
+    Py_INCREF(val);
+    return val;
+}
+
 PyTypeObject PyDictIterValue_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "dict_valueiterator",                       /* tp_name */
@@ -5232,6 +5045,39 @@ PyTypeObject PyDictIterValue_Type = {
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
     (iternextfunc)dictiter_iternextvalue,       /* tp_iternext */
+    dictiter_methods,                           /* tp_methods */
+    0,
+};
+
+PyTypeObject PyFrozenDictIterValue_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "frozendict_valueiterator",                 /* tp_name */
+    sizeof(dictiterobject),                     /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)dictiter_dealloc,               /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)dictiter_traverse,            /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    (iternextfunc)frozendictiter_iternextvalue, /* tp_iternext */
     dictiter_methods,                           /* tp_methods */
     0,
 };
@@ -5310,6 +5156,46 @@ fail:
     return NULL;
 }
 
+static PyObject* frozendictiter_iternextitem(dictiterobject* di) {
+    Py_ssize_t pos = di->di_pos;
+    assert(pos >= 0);
+    PyDictObject* d = di->di_dict;
+    assert(d != NULL);
+
+    if (pos >= d->ma_used) {
+        return NULL;
+    }
+
+    assert(PyFrozenDict_Check(d));
+    PyDictKeyEntry* entry_ptr = &DK_ENTRIES(d->ma_keys)[di->di_pos];
+    PyObject* key = entry_ptr->me_key;
+    PyObject* val = entry_ptr->me_value;
+    assert(key != NULL);
+    assert(val != NULL);
+    di->di_pos++;
+    Py_INCREF(key);
+    Py_INCREF(val);
+
+    PyObject* result;
+    if (Py_REFCNT(di->di_result) == 1) {
+        result = di->di_result;
+        PyObject *oldkey = PyTuple_GET_ITEM(result, 0);
+        PyObject *oldvalue = PyTuple_GET_ITEM(result, 1);
+        Py_INCREF(result);
+        Py_DECREF(oldkey);
+        Py_DECREF(oldvalue);
+    }
+    else {
+        result = PyTuple_New(2);
+        if (result == NULL)
+            return NULL;
+    }
+
+    PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
+    PyTuple_SET_ITEM(result, 1, val);  /* steals reference */
+    return result;
+}
+
 PyTypeObject PyDictIterItem_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "dict_itemiterator",                        /* tp_name */
@@ -5339,6 +5225,39 @@ PyTypeObject PyDictIterItem_Type = {
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
     (iternextfunc)dictiter_iternextitem,        /* tp_iternext */
+    dictiter_methods,                           /* tp_methods */
+    0,
+};
+
+PyTypeObject PyFrozenDictIterItem_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "frozendict_itemiterator",                  /* tp_name */
+    sizeof(dictiterobject),                     /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)dictiter_dealloc,               /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)dictiter_traverse,            /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    (iternextfunc)frozendictiter_iternextitem,  /* tp_iternext */
     dictiter_methods,                           /* tp_methods */
     0,
 };
@@ -6158,6 +6077,15 @@ dictitems_iter(_PyDictViewObject *dv)
     return dictiter_new(dv->dv_dict, &PyDictIterItem_Type);
 }
 
+static PyObject *
+frozendictitems_iter(_PyDictViewObject *dv)
+{
+    if (dv->dv_dict == NULL) {
+        Py_RETURN_NONE;
+    }
+    return dictiter_new(dv->dv_dict, &PyFrozenDictIterItem_Type);
+}
+
 static int
 dictitems_contains(_PyDictViewObject *dv, PyObject *obj)
 {
@@ -6238,10 +6166,49 @@ PyTypeObject PyDictItems_Type = {
     .tp_getset = dictview_getset,
 };
 
+PyTypeObject PyFrozenDictItems_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "frozendict_items",                         /* tp_name */
+    sizeof(_PyDictViewObject),                  /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)dictview_dealloc,               /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_as_async */
+    (reprfunc)dictview_repr,                    /* tp_repr */
+    &dictviews_as_number,                       /* tp_as_number */
+    &dictitems_as_sequence,                     /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)dictview_traverse,            /* tp_traverse */
+    0,                                          /* tp_clear */
+    dictview_richcompare,                       /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    (getiterfunc)frozendictitems_iter,          /* tp_iter */
+    0,                                          /* tp_iternext */
+    dictitems_methods,                          /* tp_methods */
+    .tp_getset = dictview_getset,
+};
+
 static PyObject *
 dictitems_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 {
     return _PyDictView_New(dict, &PyDictItems_Type);
+}
+
+static PyObject *
+frozendictitems_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
+{
+    return _PyDictView_New(dict, &PyFrozenDictItems_Type);
 }
 
 static PyObject *
@@ -6262,6 +6229,15 @@ dictvalues_iter(_PyDictViewObject *dv)
         Py_RETURN_NONE;
     }
     return dictiter_new(dv->dv_dict, &PyDictIterValue_Type);
+}
+
+static PyObject *
+frozendictvalues_iter(_PyDictViewObject *dv)
+{
+    if (dv->dv_dict == NULL) {
+        Py_RETURN_NONE;
+    }
+    return dictiter_new(dv->dv_dict, &PyFrozenDictIterValue_Type);
 }
 
 static PySequenceMethods dictvalues_as_sequence = {
@@ -6319,10 +6295,49 @@ PyTypeObject PyDictValues_Type = {
     .tp_getset = dictview_getset,
 };
 
+PyTypeObject PyFrozenDictValues_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "frozendict_values",                        /* tp_name */
+    sizeof(_PyDictViewObject),                  /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)dictview_dealloc,               /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_as_async */
+    (reprfunc)dictview_repr,                    /* tp_repr */
+    0,                                          /* tp_as_number */
+    &dictvalues_as_sequence,                    /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)dictview_traverse,            /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    (getiterfunc)frozendictvalues_iter,         /* tp_iter */
+    0,                                          /* tp_iternext */
+    dictvalues_methods,                         /* tp_methods */
+    .tp_getset = dictview_getset,
+};
+
 static PyObject *
 dictvalues_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 {
     return _PyDictView_New(dict, &PyDictValues_Type);
+}
+
+static PyObject *
+frozendictvalues_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
+{
+    return _PyDictView_New(dict, &PyFrozenDictValues_Type);
 }
 
 static PyObject *
