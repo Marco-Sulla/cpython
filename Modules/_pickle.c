@@ -5876,7 +5876,6 @@ load_frozendict(UnpicklerObject *self)
             return -1;
         }
     }
-    _PyFrozendict_UpdateLookup(dict);
     Pdata_clear(self->stack, i);
     PDATA_PUSH(self->stack, dict, -1);
     return 0;

@@ -982,18 +982,6 @@ lookdict_split(PyDictObject *mp, PyObject *key,
     Py_UNREACHABLE();
 }
 
-static int dict_has_only_unicode_keys_exact(PyDictObject* mp) {
-    PyDictKeyEntry* ep0 = DK_ENTRIES(mp->ma_keys);
-
-    for (Py_ssize_t i = 0, n = mp->ma_used; i < n; i++) {
-        if (! PyUnicode_CheckExact((&ep0[i])->me_key)) {
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
 int
 _PyDict_HasOnlyStringKeys(PyObject *dict)
 {
@@ -2174,22 +2162,6 @@ Fail:
     return NULL;
 }
 
-static void frozendict_update_lookup(PyObject* op) {
-    PyDictObject* mp = (PyDictObject*) op;
-    PyDictKeysObject* keys = mp->ma_keys;
-    
-    if (dict_has_only_unicode_keys_exact(mp)) {
-            keys->dk_lookup = lookdict_unicode_nodummy;
-    }
-    else {
-        keys->dk_lookup = lookdict;
-    }
-};
-
-void _PyFrozendict_UpdateLookup(PyObject* op) {
-    frozendict_update_lookup(op);
-}
-
 // empty frozendict singleton
 static PyObject* empty_frozendict = NULL;
 
@@ -2215,9 +2187,10 @@ frozendict_fromkeys_impl(PyObject *type, PyObject *iterable, PyObject *value)
         return NULL;
     
     Py_ssize_t size;
+    PyDictObject *mp = (PyDictObject *)d;
+    mp->ma_keys = new_keys_object(PyDict_MINSIZE);
     
     if (PyAnyDict_CheckExact(iterable)) {
-        PyDictObject *mp = (PyDictObject *)d;
         PyObject *oldvalue;
         Py_ssize_t pos = 0;
         PyObject *key;
@@ -2241,7 +2214,6 @@ frozendict_fromkeys_impl(PyObject *type, PyObject *iterable, PyObject *value)
         return d;
     }
     else if (PyAnySet_CheckExact(iterable)) {
-        PyDictObject *mp = (PyDictObject *)d;
         Py_ssize_t pos = 0;
         PyObject *key;
         Py_hash_t hash;
@@ -2818,7 +2790,6 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
                 return -1;
             }
 
-            dictkeys_decref(mp->ma_keys, 1);
             mp->ma_keys = keys;
             
             mp->ma_used = numentries;
@@ -2839,6 +2810,10 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
         Py_hash_t hash;
         int err;
         
+        if (mp->ma_keys == NULL) {
+            mp->ma_keys = new_keys_object(PyDict_MINSIZE);
+        }
+
         /* Do one big resize at the start, rather than
          * incrementally resizing as we insert new items.  Expect
          * that there will be no (or few) overlapping keys.
@@ -2886,6 +2861,10 @@ static int frozendict_merge(PyObject* a, PyObject* b, int empty) {
         PyObject *iter;
         PyObject *key, *value;
         int status;
+        
+        if (mp->ma_keys == NULL) {
+            mp->ma_keys = new_keys_object(PyDict_MINSIZE);
+        }
 
         if (keys == NULL)
             /* Docstring says this is equivalent to E.keys() so
@@ -2942,6 +2921,12 @@ static int frozendict_merge_from_seq2(PyObject* d, PyObject* seq2) {
     PyObject* item;
     int res = 0;
     
+    PyDictObject* mp = (PyDictObject*) d;
+
+    if (mp->ma_keys == NULL) {
+        mp->ma_keys = new_keys_object(PyDict_MINSIZE);
+    }
+
     for (Py_ssize_t i = 0; ; ++i) {
         fast = NULL;
         item = PyIter_Next(it);
@@ -3044,8 +3029,6 @@ static int frozendict_update_common(PyObject* self,
             result = -1;
         }
     }
-    
-    frozendict_update_lookup(self);
     
     return result;
 }
@@ -4306,16 +4289,8 @@ static PyObject* frozendict_new_barebone(PyTypeObject* type) {
     }
 
     PyFrozenDictObject* mp = (PyFrozenDictObject*) self;
-    PyDictKeysObject* keys = new_keys_object(PyDict_MINSIZE);
 
-    if (keys == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
-    
-    keys->dk_lookup = lookdict;
-    
-    mp->ma_keys = keys;
+    mp->ma_keys = NULL;
     mp->ma_values = NULL;
     mp->ma_used = 0;
     mp->_hash = -1;
@@ -4371,6 +4346,10 @@ static PyObject* frozendict_vectorcall(PyObject* type,
     }
 
     if (kwnames != NULL) {
+        if (mp->ma_keys == NULL) {
+            mp->ma_keys = new_keys_object(PyDict_MINSIZE);
+        }
+
         if (mp->ma_keys->dk_usable < size) {
             if (frozendict_resize((PyDictObject*) self, estimate_keysize(mp->ma_used + size))) {
                return NULL;
@@ -4389,6 +4368,7 @@ static PyObject* frozendict_vectorcall(PyObject* type,
     if (mp->ma_used == 0 && ttype == &PyFrozenDict_Type) {
         if (empty_frozendict == NULL) {
             empty_frozendict = self;
+            ((PyDictObject*) empty_frozendict)->ma_keys = Py_EMPTY_KEYS;
             mp->ma_version_tag = DICT_NEXT_VERSION();
         }
         
@@ -4454,6 +4434,7 @@ static PyObject* _frozendict_new(
     ) {
         if (empty_frozendict == NULL) {
             empty_frozendict = self;
+            ((PyDictObject*) empty_frozendict)->ma_keys = Py_EMPTY_KEYS;
             mp->ma_version_tag = DICT_NEXT_VERSION();
         }
         
@@ -4482,7 +4463,9 @@ PyObject* PyFrozenDict_New(PyObject* arg, PyObject* kwds) {
 
     PyTuple_SET_ITEM(args, 0, arg);
 
-    return _frozendict_new(&PyFrozenDict_Type, args, kwds, 0);
+    PyObject* self = _frozendict_new(&PyFrozenDict_Type, args, kwds, 0);
+    ((PyDictObject*) self)->ma_keys = new_keys_object(PyDict_MINSIZE);
+    return self;
 }
 
 #define MINUSONE_HASH ((Py_hash_t) -1)
