@@ -26,7 +26,7 @@ def main(number):
         
         return sqrt(sigma2 / N)
     
-    def autorange(stmt, setup="pass", globals=None, ratio=1000, bench_time=10, number=None):
+    def autorange(stmt, setup="pass", globals=None, ratio=1000, bench_time=10, number=None, max_data=100000):
         if setup == None:
             setup = "pass"
         
@@ -65,33 +65,38 @@ def main(number):
             if break_immediately or time() - bench_start > bench_time:
                 break
         
-        data_min.sort()
-        xbar = data_min[0]
-        i = 0
+            data_min.sort()
+            xbar = data_min[0]
+            i = 0
+            
+            while i < len(data_min):
+                i = len(data_min)
+                sigma = mindev(data_min, xbar=xbar)
+                
+                for i in range(2, len(data_min)):
+                    if data_min[i] - xbar > 3 * sigma:
+                        break
+                
+                k = i
+                
+                if i < 5:
+                    k = 5
+
+                if i > max_data:
+                    i = max_data
+                
+                del data_min[k:]
         
-        while i < len(data_min):
-            i = len(data_min)
-            sigma = mindev(data_min, xbar=xbar)
-            
-            for i in range(2, len(data_min)):
-                if data_min[i] - xbar > 3 * sigma:
-                    break
-            
-            k = i
-            
-            if i < 5:
-                k = 5
-            
-            del data_min[k:]
-        
-        return (min(data_min) / number, mindev(data_min, xbar=xbar) / number)
+        xbar = min(data_min)
+
+        return (xbar / number, mindev(data_min, xbar=xbar) / number)
     
     
     def getUuid():
         return str(uuid.uuid4())
     
     
-    dictionary_sizes = (4, 8, 1000)
+    dictionary_sizes = (8, 42, 1000)
     
     print_tpl = "Name: {name: <25} Size: {size: >4}; Keys: {keys: >3}; Type: {type: >10}; Time: {time:.2e}; Sigma: {sigma:.0e}"
     str_key = '12323f29-c31f-478c-9b15-e7acc5354df9'
@@ -142,7 +147,7 @@ def main(number):
                         size = len(o), 
                         type = type(o).__name__, 
                         time = bench_res[0],
-                        sigma = bench_res[1],  
+                        sigma = bench_res[1],
                     ))
 
 if __name__ == "__main__":

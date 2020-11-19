@@ -25,7 +25,7 @@ def main(number):
         
         return sqrt(sigma2 / N)
     
-    def autorange(stmt, setup="pass", globals=None, ratio=1000, bench_time=10, number=None):
+    def autorange(stmt, setup="pass", globals=None, ratio=1000, bench_time=10, number=None, max_data=100000):
         if setup == None:
             setup = "pass"
         
@@ -64,26 +64,31 @@ def main(number):
             if break_immediately or time() - bench_start > bench_time:
                 break
         
-        data_min.sort()
-        xbar = data_min[0]
-        i = 0
+            data_min.sort()
+            xbar = data_min[0]
+            i = 0
+            
+            while i < len(data_min):
+                i = len(data_min)
+                sigma = mindev(data_min, xbar=xbar)
+                
+                for i in range(2, len(data_min)):
+                    if data_min[i] - xbar > 3 * sigma:
+                        break
+                
+                k = i
+                
+                if i < 5:
+                    k = 5
+
+                if i > max_data:
+                    i = max_data
+                
+                del data_min[k:]
         
-        while i < len(data_min):
-            i = len(data_min)
-            sigma = mindev(data_min, xbar=xbar)
-            
-            for i in range(2, len(data_min)):
-                if data_min[i] - xbar > 3 * sigma:
-                    break
-            
-            k = i
-            
-            if i < 5:
-                k = 5
-            
-            del data_min[k:]
-        
-        return (min(data_min) / number, mindev(data_min, xbar=xbar) / number)
+        xbar = min(data_min)
+
+        return (xbar / number, mindev(data_min, xbar=xbar) / number)
     
     
     def getUuid():
@@ -101,20 +106,20 @@ def main(number):
 
     benchmarks = (
         {"name": "constructor(d)", "code": "klass(d)", "setup": "klass = type(o)", },
-        {"name": "constructor(d.items())", "code": "klass(v)", "setup": "klass = type(o); v = tuple(d.items())", },  
-        {"name": "constructor(**d)", "code": "klass(**d)", "setup": "klass = type(o)", },
-        {"name": "pickle.dumps(o)", "code": "dumps(o, protocol=-1)", "setup": "from pickle import dumps", },  
-        {"name": "pickle.loads(dump)", "code": "loads(dump)", "setup": "from pickle import loads, dumps; dump = dumps(o, protocol=-1)", },  
-        {"name": "class.fromkeys()", "code": "fromkeys(keys)", "setup": "fromkeys = type(o).fromkeys; keys = o.keys()", }, 
+        {"name": "constructor(kwargs)", "code": "klass(**d)", "setup": "klass = type(o)", },
+        {"name": "constructor(seq2)", "code": "klass(v)", "setup": "klass = type(o); v = tuple(d.items())", },  
         {"name": "constructor(o)", "code": "klass(o)", "setup": "klass = type(o)", },
-        {"name": "o.copy()", "code": "o.copy()", "setup": "pass", },
-        {"name": "o == d", "code": "o == d", "setup": "pass", },
-        {"name": "o == o", "code": "o == o", "setup": "pass", }, 
         {"name": "for x in o", "code": "for _ in o: pass", "setup": "pass", },
         {"name": "for x in o.values()", "code": "for _ in values: pass", "setup": "values = o.values()", },  
-        {"name": "for x in o.items()", "code": "for _ in items: pass", "setup": "items = o.items()", },  
+        {"name": "for x in o.items()", "code": "for _ in items: pass", "setup": "items = o.items()", }, 
+        {"name": "pickle.dumps(o)", "code": "dumps(o, protocol=-1)", "setup": "from pickle import dumps", },  
+        {"name": "pickle.loads(dump)", "code": "loads(dump)", "setup": "from pickle import loads, dumps; dump = dumps(o, protocol=-1)", },  
+        {"name": "class.fromkeys()", "code": "fromkeys(keys)", "setup": "fromkeys = type(o).fromkeys; keys = o.keys()", },  
+        {"name": "o.copy()", "code": "o.copy()", "setup": "pass", },
+        {"name": "o == o", "code": "o == o", "setup": "pass", }, 
         # {"name": "for x in o.keys()", "code": "for _ in keys: pass", "setup": "keys = o.keys()", },   
         # {"name": "for x in iter(o)", "code": "for _ in iter(o): pass", "setup": "pass", }, 
+        # {"name": "o == d", "code": "o == d", "setup": "pass", },
         # {"name": "o.get(key)", "code": "get(key)", "setup": "key = getUuid(); get = o.get", }, 
         # {"name": "o[key]", "code": "o[one_key]","setup": "pass", }, 
         # {"name": "key in o", "code": "key in o", "setup": "key = getUuid()", },
@@ -127,6 +132,7 @@ def main(number):
         # {"name": "iter(o)", "code": "iter(o)", "setup": "pass", }, 
         # {"name": "repr(o)", "code": "repr(o)", "setup": "pass", },
         # {"name": "str(o)", "code": "str(o)", "setup": "pass", },
+        # {"name": "set", "code": None, "setup": "val = getUuid()", },
     )
     
     dict_collection = []
@@ -153,16 +159,21 @@ def main(number):
         for dict_collection_entry in dict_collection:
             for (dict_keys, (dicts, one_key)) in dict_collection_entry.items():
         
-                if benchmark["name"] == "constructor(**d)" and dict_keys == "int":
+                if benchmark["name"] == "constructor(kwargs)" and dict_keys == "int":
                     continue
-                
+
                 print("////////////////////////////////////////////////////////////////////////////////")
                 
                 for o in dicts:
                     if benchmark["name"] == "hash(o)" and type(o) == dict:
                         continue
                     
-                    
+                    if benchmark["name"] == "set":
+                        if type(o) == dict:
+                            benchmark["code"] = "o[one_key] = val"
+                        else:
+                            benchmark["code"] = "o.set(one_key, val)"
+
                     d = dicts[0]
                     
                     bench_res = autorange(

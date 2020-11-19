@@ -4336,7 +4336,11 @@ static PyObject* frozendict_vectorcall(PyObject* type,
 
     PyFrozenDictObject* mp = (PyFrozenDictObject*) self;
     
+    int empty = 1;
+    
     if (nargs == 1) {
+        empty = 0;
+
         if (frozendict_update_arg(self, arg, 1) < 0) {
             Py_DECREF(self);
             return NULL;
@@ -4357,7 +4361,7 @@ static PyObject* frozendict_vectorcall(PyObject* type,
         }
         
         for (Py_ssize_t i = 0; i < size; i++) {
-            if (frozendict_setitem(self, PyTuple_GET_ITEM(kwnames, i), args[i], 0) < 0) {
+            if (frozendict_setitem(self, PyTuple_GET_ITEM(kwnames, i), args[i], empty) < 0) {
                 Py_DECREF(self);
                 return NULL;
             }

@@ -5871,7 +5871,7 @@ load_frozendict(UnpicklerObject *self)
     for (k = i + 1; k < j; k += 2) {
         key = self->stack->data[k - 1];
         value = self->stack->data[k];
-        if (_PyFrozendict_SetItem(dict, key, value, 0) < 0) {
+        if (_PyFrozendict_SetItem(dict, key, value, 1) < 0) {
             Py_DECREF(dict);
             return -1;
         }
