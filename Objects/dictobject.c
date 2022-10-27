@@ -953,11 +953,12 @@ frozendict_lookup(PyDictObject *mp,
     PyDictKeysObject* dk = mp->ma_keys;
     PyDictKeyEntry* ep0 = DK_ENTRIES(dk);
     const size_t mask = DK_MASK(dk);
-    size_t perturb = (size_t)hash;
-    size_t i = (size_t)hash & mask;
-    
+    size_t perturb = (size_t) hash;
+    size_t i = mask & perturb;
     Py_ssize_t ix;
     PyDictKeyEntry* ep;
+    PyObject* startkey;
+    int cmp;
 
     while (1) {
         ix = dictkeys_get_index(dk, i);
@@ -969,20 +970,29 @@ frozendict_lookup(PyDictObject *mp,
         }
         
         ep = &ep0[ix];
-        assert(ep->me_key != NULL);
+        startkey = ep->me_key;
+        assert(startkey != NULL);
         
-        if (
-            ep->me_key == key ||
-            (ep->me_hash == hash && 
-            PyObject_RichCompareBool(ep->me_key, key, Py_EQ) == 1)
-        ) {
+        if (startkey == key) {
             *value_addr = mp->ma_values[ix];
             return ix;
+        }
+        else if (ep->me_hash == hash) {
+            Py_INCREF(startkey);
+            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+            assert(cmp >= 0);
+            Py_DECREF(startkey);
+            
+            if (cmp > 0) {
+                *value_addr = mp->ma_values[ix];
+                return ix;
+            }
         }
         
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
     }
+    
     Py_UNREACHABLE();
 }
 
@@ -998,8 +1008,7 @@ frozendict_lookup_unicode(PyDictObject *mp,
     PyDictKeyEntry* ep0 = DK_ENTRIES(dk);
     const size_t mask = DK_MASK(dk);
     size_t perturb = (size_t)hash;
-    size_t i = (size_t)hash & mask;
-    
+    size_t i = mask & perturb;
     Py_ssize_t ix;
     PyDictKeyEntry* ep;
 
@@ -1027,6 +1036,7 @@ frozendict_lookup_unicode(PyDictObject *mp,
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
     }
+    
     Py_UNREACHABLE();
 }
 
@@ -4548,9 +4558,9 @@ static PyObject* frozendictiter_iternextkey(frozendictiterobject* di) {
     }
     
     assert(PyFrozenDict_Check(d));
-    assert(d->ma_values[di->di_pos] != NULL);
+    assert(d->ma_values[pos] != NULL);
     
-    PyObject* key = DK_ENTRIES(d->ma_keys)[di->di_pos].me_key;
+    PyObject* key = DK_ENTRIES(d->ma_keys)[pos].me_key;
     assert(key != NULL);
     di->di_pos++;
     Py_INCREF(key);
