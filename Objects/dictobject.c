@@ -598,6 +598,11 @@ new_keys_object(uint8_t log2_size, bool unicode)
     int log2_bytes;
     size_t entry_size = unicode ? sizeof(PyDictUnicodeEntry) : sizeof(PyDictKeyEntry);
 
+    if (log2_size >= SIZEOF_SIZE_T*8) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
     assert(log2_size >= PyDict_LOG_MINSIZE);
 
     usable = USABLE_FRACTION(1<<log2_size);
@@ -1410,12 +1415,6 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
 {
     PyDictKeysObject *oldkeys;
     PyDictValues *oldvalues;
-
-    if (log2_newsize >= SIZEOF_SIZE_T*8) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    assert(log2_newsize >= PyDict_LOG_MINSIZE);
 
     oldkeys = mp->ma_keys;
     oldvalues = mp->ma_values;
