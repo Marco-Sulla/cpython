@@ -4547,7 +4547,7 @@ sizeof_lock_held(PyDictObject *mp)
     if (_PyDict_HasSplitTable(mp)) {
         res += shared_keys_usable_size(mp->ma_keys) * sizeof(PyObject*);
     }
-    /* If the dictionary is split, the keys portion is accounted-for
+    /* If the dictionary is combined, the keys portion is accounted-for
        in the type object. */
     if (mp->ma_keys->dk_refcnt == 1) {
         res += _PyDict_KeysSize(mp->ma_keys);
